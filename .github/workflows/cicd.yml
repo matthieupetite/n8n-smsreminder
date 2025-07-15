@@ -30,17 +30,9 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 9.x
-      - name: Add private nuget repository
-        run: dotnet nuget add source  --username ${{ secrets.REGISTRY_USER }} --password ${{ secrets.REGISTRY_TOKEN }}   --store-password-in-clear-text --name github "https://nuget.pkg.github.com/matthieupetite/index.json"
       - name: Determine Version
         id:   gitversion
         uses: gittools/actions/gitversion/execute@v0.9.7
-      - name: Install dependencies
-        run:  dotnet restore
-      - name: Build Project
-        run:  dotnet build --configuration Release --no-restore
-      - name: Test Project
-        run:  dotnet test
       - name: Tag Repository
         uses: avakar/tag-and-release@v1
         if: github.event.issue.pull_request == '' && contains('refs/heads/main', github.ref)
