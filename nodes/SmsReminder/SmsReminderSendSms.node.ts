@@ -104,8 +104,8 @@ export class SmsReminderSendSms implements INodeType {
 						body,
 						json: true,
 					});
-
-					if (response.status === 'success') {
+					const statusCode = response.statusCode; // Get the status code
+					if (statusCode=== 200) {
 						items[itemIndex] = {
 							json: {
 								...items[itemIndex].json,
