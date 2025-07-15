@@ -5,16 +5,21 @@ import {
 	INodeProperties,
 } from 'n8n-workflow';
 
-export class HttpBinApi implements ICredentialType {
-	name = 'httpbinApi';
-	displayName = 'HttpBin API';
-	documentationUrl = 'https://your-docs-url';
+export class SmsReminderApi implements ICredentialType {
+	name = 'smsReminderApi';
+	displayName = 'SMS Reminder API';
+
+	documentationUrl = 'https://matthieupetite.github.io/n8n-smsreminder/';
+
 	properties: INodeProperties[] = [
+		// The credentials to get from user and save encrypted.
+		// Properties can be defined exactly in the same way
+		// as node properties.
 		{
 			displayName: 'Token',
 			name: 'token',
 			type: 'string',
-			default: '',
+			default: 'BOlA`Itn[YeQ[1VH^E0Q3t86K?$<YE]A}Dpk|$uo|br*\'Cu+TPvqx^`V`Tl75V',
 			typeOptions: {
 				password: true,
 			}
@@ -23,7 +28,7 @@ export class HttpBinApi implements ICredentialType {
 			displayName: 'Domain',
 			name: 'domain',
 			type: 'string',
-			default: 'https://httpbin.org',
+			default: 'https://admin.codeers.net',
 		},
 	];
 
@@ -35,7 +40,7 @@ export class HttpBinApi implements ICredentialType {
 		type: 'generic',
 		properties: {
 			headers: {
-				Authorization: '={{"Bearer " + $credentials.token}}',
+				WorkerSecret: '={{$credentials.token}}',
 			},
 		},
 	};
@@ -44,7 +49,7 @@ export class HttpBinApi implements ICredentialType {
 	test: ICredentialTestRequest = {
 		request: {
 			baseURL: '={{$credentials?.domain}}',
-			url: '/bearer',
+			url: '/api/worker/status',
 		},
 	};
 }

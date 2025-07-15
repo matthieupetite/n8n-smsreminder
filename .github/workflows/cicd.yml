@@ -1,0 +1,102 @@
+name: Build GoogleSMSV2 Backend
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    name: "Build Project and publish"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}   # checkout the correct branch name
+          fetch-depth: 0                # fetch the whole repo history
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0.9.7
+        with:
+          versionSpec: '5.x'
+          includePrerelease: true
+      - name: Setup .NET Core SDK 9.x
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 9.x
+      - name: Add private nuget repository
+        run: dotnet nuget add source  --username ${{ secrets.REGISTRY_USER }} --password ${{ secrets.REGISTRY_TOKEN }}   --store-password-in-clear-text --name github "https://nuget.pkg.github.com/matthieupetite/index.json"
+      - name: Determine Version
+        id:   gitversion
+        uses: gittools/actions/gitversion/execute@v0.9.7
+      - name: Install dependencies
+        run:  dotnet restore
+      - name: Build Project
+        run:  dotnet build --configuration Release --no-restore
+      - name: Test Project
+        run:  dotnet test
+      - name: Tag Repository
+        uses: avakar/tag-and-release@v1
+        if: github.event.issue.pull_request == '' && contains('refs/heads/main', github.ref)
+        with:
+          tag_name: v${{ steps.gitversion.outputs.MajorMinorPatch }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  release:
+    name: release new version
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event.issue.pull_request == '' && contains('refs/heads/main', github.ref)
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}   # checkout the correct branch name
+          fetch-depth: 0                # fetch the whole repo history
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0.9.7
+        with:
+          versionSpec: '5.x'
+          includePrerelease: true
+
+      - name: Determine Version
+        id:   gitversion
+        uses: gittools/actions/gitversion/execute@v0.9.7
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: ${{ steps.gitversion.outputs.MajorMinorPatch }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: .
+          platforms: linux/amd64, linux/arm64
+          push: true
+          build-args: |
+            REGISTRY_USER=${{ secrets.REGISTRY_USER }}
+            REGISTRY_TOKEN=${{ secrets.REGISTRY_TOKEN }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

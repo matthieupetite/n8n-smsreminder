@@ -1,0 +1,405 @@
+// import {
+// 	IExecuteFunctions,
+// 	INodeExecutionData,
+// 	INodeType,
+// 	INodeTypeDescription,
+// 	LoggerProxy as Logger
+// } from 'n8n-workflow';
+
+// import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+
+// export class SmsReminder implements INodeType {
+// 	description: INodeTypeDescription = {
+// 		displayName: 'SMS Reminder',
+// 		name: 'smsReminder',
+// 		group: ['SmsReminder'],
+// 		icon: 'file:SmsReminder.svg',
+// 		version: 1,
+// 		description: 'Sms Reminder Node for n8n',
+// 		defaults: {
+// 			name: 'SMS Reminder',
+// 		},
+// 		inputs: [NodeConnectionType.Main],
+// 		outputs: [NodeConnectionType.Main],
+// 		credentials: [
+// 			{
+// 				name: 'smsReminderApi',
+// 				required: true,
+// 				displayOptions: {
+// 					show: {
+// 						authentication: ['apiKey'],
+// 					},
+// 				},
+// 			},
+// 		],
+// 		usableAsTool: true,
+// 		properties: [
+// 			// Node properties which the user gets displayed and
+// 			// can change on the node.
+// 			{
+// 				displayName: 'Authentication',
+// 				name: 'authentication',
+// 				type: 'options',
+// 				options: [
+// 					{
+// 						name: 'API Key',
+// 						value: 'apiKey',
+// 					}
+// 				],
+// 				default: 'apiKey',
+// 			},
+// 			{
+// 				displayName: 'Operation',
+// 				name: 'operation',
+// 				type: 'options',
+// 				noDataExpression: true,
+// 				options: [
+// 						{
+// 								name: 'Retrieve User to Process',
+// 								value: 'retrieveUserToProcess',
+// 								description: 'Retrieve a user to process',
+// 								action: 'Retrieve a user to process',
+// 						},
+// 						{
+// 								name: 'Get Appointments for User',
+// 								value: 'getAppointmentsForUser',
+// 								description: 'Get appointments for a user',
+// 								action: 'Get appointments for a user',
+// 						},
+// 						{
+// 								name: 'Get Current Configuration for User',
+// 								value: 'getCurrentConfigurationForUser',
+// 								description: 'Get current configuration for a user',
+// 								action: 'Get current configuration for a user',
+// 						},
+// 						{
+// 								name: 'Send SMS Report',
+// 								value: 'postSmsReport',
+// 								description: 'Send SMS report for a user',
+// 								action: 'Send SMS report for a user',
+// 						},
+// 				],
+// 				default: 'retrieveUserToProcess',
+// 				displayOptions: {
+// 						show: {
+// 								authentication: ['apiKey'],
+// 						},
+// 				},
+// 			},
+// 			{
+// 				displayName: 'User ID',
+// 				name: 'userId',
+// 				type: 'string',
+// 				default: '',
+// 				required: true,
+// 				displayOptions: {
+// 					show: {
+// 						operation: ['getAppointmentsForUser', 'getCurrentConfigurationForUser', 'postSmsReport'],
+// 					},
+// 				},
+// 				description: 'The ID of the user to retrieve appointments or configuration for',
+// 			},
+// 			{
+// 				displayName: 'Start Date',
+// 				name: 'startDate',
+// 				type: 'dateTime',
+// 				default: '',
+// 				required: true,
+// 				displayOptions: {
+// 					show: {
+// 						operation: ['getAppointmentsForUser'],
+// 					},
+// 				},
+// 				description: 'The start date for retrieving appointments',
+// 			},
+// 			{
+// 				displayName: 'End Date',
+// 				name: 'endDate',
+// 				type: 'dateTime',
+// 				default: '',
+// 				required: true,
+// 				displayOptions: {
+// 					show: {
+// 						operation: ['getAppointmentsForUser'],
+// 					},
+// 				},
+// 				description: 'The end date for retrieving appointments',
+// 			},
+// 			{
+// 				displayName: 'Message',
+// 				name: 'messageSent',
+// 				type: 'string',
+// 				default: '',
+// 				required: true,
+// 				displayOptions: {
+// 					show: {
+// 						operation: ['postSmsReport'],
+// 					},
+// 				},
+// 				description: 'The message to send in the SMS report',
+// 			},
+// 			{
+// 				displayName: 'Phone Number',
+// 				name: 'phoneNumber',
+// 				type: 'string',
+// 				default: '',
+// 				required: true,
+// 				displayOptions: {
+// 					show: {
+// 						operation: ['postSmsReport'],
+// 					},
+// 				},
+// 				description: 'The Phone Number to send in the SMS report',
+// 			},
+// 			{
+// 				displayName: 'Report Date',
+// 				name: 'reportDate',
+// 				type: 'dateTime',
+// 				default: '',
+// 				required: true,
+// 				displayOptions: {
+// 					show: {
+// 						operation: ['postSmsReport'],
+// 					},
+// 				},
+// 				description: 'The Report date to send in the SMS report',
+// 			},
+// 			{
+// 				displayName: 'Report Status',
+// 				name: 'reportStatus',
+// 				type: 'options',
+// 				default: 'Success',
+// 				options: [
+// 					{ name: 'Success', value: 'Success' },
+// 					{ name: 'Failure', value: 'Failure' }
+// 				],
+// 				required: true,
+// 				displayOptions: {
+// 					show: {
+// 						operation: ['postSmsReport'],
+// 					},
+// 				},
+// 				description: 'The Report status to send in the SMS report',
+// 			},
+// 			{
+// 				displayName: 'Event ID',
+// 				name: 'eventId',
+// 				type: 'string',
+// 				default: '',
+// 				required: true,
+// 				displayOptions: {
+// 					show: {
+// 						operation: ['postSmsReport'],
+// 					},
+// 				},
+// 				description: 'The Report EventId to send in the SMS report',
+// 			},
+// 		],
+// 	};
+
+// 	// The execute method will go here
+// 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
+// 		const items = this.getInputData();
+
+// 		let item: INodeExecutionData;
+
+// 		// Iterates over all input items and add the key "myString" with the
+// 		// value the parameter "myString" resolves to.
+// 		// (This could be a different value for each item in case it contains an expression)
+// 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
+// 			try {
+// 				item = items[itemIndex];
+
+// 				const operation = this.getNodeParameter('operation', itemIndex) as string;
+// 				const credentials = await this.getCredentials('smsReminderApi');
+// 				Logger.info(`Executing operation: ${operation} with credentials: ${JSON.stringify(credentials)}`);
+// 				Logger.info(`Item before operation: ${JSON.stringify(item.json)}`);
+// 				Logger.info(`Using SMS Reminder API URL: ${credentials.domain}/api/user/userstoprocess`);
+// 				if (operation === 'retrieveUserToProcess') {
+// 						const apiUrl = `${credentials.domain}/api/user/userstoprocess`;
+// 						try {
+// 								const response = await this.helpers.request({
+// 										method: 'GET',
+// 										url: apiUrl,
+// 										headers: {
+// 												'WorkerSecret': `${credentials.token}`,
+// 												'Content-Type': 'application/json',
+// 										},
+// 								});
+
+// 								Logger.debug(`Response from ${apiUrl}: ${JSON.stringify(response)}`);
+// 								 // Vérifier que la réponse contient un tableau "users"
+// 								if (response && Array.isArray(JSON.parse(response).users)) {
+// 										// Créer une liste d'items à partir des "users"
+// 										const userItems = JSON.parse(response).users.map((userId: string) => ({
+// 												json: {
+// 													userId: userId,
+// 													processDate: new Date(Date.now()).toISOString(), // Ajout de la date de traitement
+// 													processRoundedToHourDate: new Date(Date.now()).toISOString().split('T')[0] + 'T' + new Date(Date.now()).toISOString().split('T')[1].split(':')[0] + ':00:00.000Z', // Arrondi à l'heure
+// 												} // Chaque item contient un champ "userId"
+// 										}));
+
+// 										// Retourner la liste d'items
+// 										return [userItems];
+// 								} else {
+// 										throw new NodeOperationError(this.getNode(), 'Invalid response format: "users" array not found.');
+// 								}
+
+// 						} catch (error) {
+// 								Logger.error(`Failed to retrieve user to process. URL: ${apiUrl}, Error: ${error.response?.data || error.message}`);
+// 								throw new NodeOperationError(this.getNode(), `Failed to retrieve user to process: ${error.message}`);
+// 						}
+// 				}
+
+// 				if (operation === 'getCurrentConfigurationForUser') {
+// 					const userId = this.getNodeParameter('userId', itemIndex) as string;
+// 					const apiUrl = `${credentials.domain}/api/configuration?userId=${userId}`;
+// 					try {
+// 						const response = await this.helpers.request({
+// 							method: 'GET',
+// 							url: apiUrl,
+// 							headers: {
+// 								'WorkerSecret': `${credentials.token}`,
+// 								'Content-Type': 'application/json',
+// 							},
+// 						});
+
+// 						Logger.debug(`Response from ${apiUrl}: ${JSON.stringify(response)}`);
+// 						const configuration = JSON.parse(response);
+// 						item.json = {
+// 								userId: configuration.userId,
+// 								messageTemplate: configuration.messageTemplate,
+// 								configurationId: configuration.id,
+// 							}
+// 					} catch (error) {
+// 						Logger.error(`Failed to get current configuration for user ${userId}. URL: ${apiUrl}, Error: ${error.response?.data || error.message}`);
+// 						throw new NodeOperationError(this.getNode(), `Failed to get current configuration for user ${userId}: ${error.message}`);
+// 					}
+// 				}
+
+// 				if (operation === 'getAppointmentsForUser') {
+// 					const userId = this.getNodeParameter('userId', itemIndex) as string;
+// 					const startDate = this.getNodeParameter('startDate', itemIndex) as string;
+// 					const endDate = this.getNodeParameter('endDate', itemIndex) as string;
+
+// 					const apiUrl = `${credentials.domain}/api/appointments/getallbydate?userId=${userId}&startDate=${startDate}&endDate=${endDate}`;
+// 					try {
+// 						const response = await this.helpers.request({
+// 							method: 'GET',
+// 							url: apiUrl,
+// 							headers: {
+// 								'WorkerSecret': `${credentials.token}`,
+// 								'Content-Type': 'application/json',
+// 							},
+// 						});
+
+// 						Logger.debug(`Response from ${apiUrl}: ${JSON.stringify(response)}`);
+// 						// Vérifier que la réponse contient un tableau "items"
+// 						if (response && Array.isArray(JSON.parse(response).items)) {
+// 								if (JSON.parse(response).items.length === 0) {
+// 									Logger.info(`No appointments found for user ${userId} between ${startDate} and ${endDate}.`);
+// 									return [[]]; // Return empty array if no appointments found
+// 								}
+// 								// Créer une liste d'items à partir des "users"
+// 								const appointmentsItems = JSON.parse(response).items.flatMap((appointment: any) =>
+//                 appointment.attendeePhoneNumberList.map((phoneNumber: string) => ({
+//                     json: {
+//                         eventId: appointment.id,
+//                         title: appointment.title,
+//                         description: appointment.description,
+//                         date: appointment.date,
+//                         attendeePhoneNumber: phoneNumber, // Single phone number per item
+//                         userId: appointment.userId,
+//                     },
+// 										}))
+// 								);
+
+// 								// Return the list of items
+// 								return [appointmentsItems];
+// 						} else {
+// 								throw new NodeOperationError(this.getNode(), 'Invalid response format: "appointments" array not found.');
+// 						}
+// 					} catch (error) {
+// 						Logger.error(`Failed to get appointments for user ${userId}. URL: ${apiUrl}, Error: ${error.response?.data || error.message}`);
+// 						throw new NodeOperationError(this.getNode(), `Failed to get appointments for user ${userId}: ${error.message}`);
+// 					}
+// 				}
+
+// 				if (operation === 'postSmsReport') {
+// 					Logger.debug(`Operation: ${operation}, Item Index: ${itemIndex}`);
+// 					Logger.debug(`Operation: ${operation}`);
+// 					Logger.debug(`User ID: ${this.getNodeParameter('userId', itemIndex)}`);
+// 					Logger.debug(`Message: ${this.getNodeParameter('messageSent', itemIndex)}`);
+// 					Logger.debug(`Phone Number: ${this.getNodeParameter('phoneNumber', itemIndex)}`);
+// 					Logger.debug(`Report Date: ${this.getNodeParameter('reportDate', itemIndex)}`);
+// 					Logger.debug(`Report Status: ${this.getNodeParameter('reportStatus', itemIndex)}`);
+// 					Logger.debug(`Event ID: ${this.getNodeParameter('eventId', itemIndex)}`);
+
+// 					const userId = this.getNodeParameter('userId', itemIndex) as string;
+// 					const messageSent = this.getNodeParameter('messageSent', itemIndex) as string;
+// 					const phoneNumber = this.getNodeParameter('phoneNumber', itemIndex) as string;
+// 					const reportDate = this.getNodeParameter('reportDate', itemIndex) as string;
+// 					const reportStatus = this.getNodeParameter('reportStatus', itemIndex) as string;
+// 					const eventId = this.getNodeParameter('eventId', itemIndex) as string;
+
+// 					Logger.debug(`User ID: ${userId}, Message: ${messageSent}, Phone Number: ${phoneNumber}, Report Date: ${reportDate}, Report Status: ${reportStatus}, Event ID: ${eventId}`);
+
+// 					const apiUrl = `${credentials.domain}/api/sms`;
+// 					try {
+// 						const response = await this.helpers.request({
+// 							method: 'POST',
+// 							url: apiUrl,
+// 							headers: {
+// 								'WorkerSecret': `${credentials.token}`,
+// 								'Content-Type': 'application/json',
+// 							},
+// 							body: {
+// 								userid: userId,
+// 								message: messageSent,
+// 								phonenumber: phoneNumber,
+// 								messagereportdate : reportDate,
+// 								status: reportStatus,
+// 								eventid: eventId,
+// 							},
+// 							json: true,
+// 						});
+
+// 						Logger.debug(`Response from ${apiUrl}: ${JSON.stringify(response)}`);
+// 						item.json = {
+// 							userid: userId,
+// 							message: messageSent,
+// 							phonenumber: phoneNumber,
+// 							messagereportdate : reportDate,
+// 							status: reportStatus,
+// 							eventid: eventId,
+// 						};
+
+
+// 					} catch (error) {
+// 						Logger.error(`Failed to send SMS report for user ${userId}. URL: ${apiUrl}, Error: ${error.response?.data || error.message}`);
+// 						throw new NodeOperationError(this.getNode(), `Failed to send SMS report for user ${userId}: ${error.message}`);
+// 					}
+// 				}
+// 			} catch (error) {
+// 				// This node should never fail but we want to showcase how
+// 				// to handle errors.
+// 				if (this.continueOnFail()) {
+// 					items.push({ json: this.getInputData(itemIndex)[0].json, error, pairedItem: itemIndex });
+// 				} else {
+// 					// Adding `itemIndex` allows other workflows to handle this error
+// 					if (error.context) {
+// 						// If the error thrown already contains the context property,
+// 						// only append the itemIndex
+// 						error.context.itemIndex = itemIndex;
+// 						throw error;
+// 					}
+// 					throw new NodeOperationError(this.getNode(), error, {
+// 						itemIndex,
+// 					});
+// 				}
+// 			}
+// 		}
+
+// 		return [items];
+// 	}
+// }
