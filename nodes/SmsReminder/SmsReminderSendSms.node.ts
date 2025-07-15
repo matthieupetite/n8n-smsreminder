@@ -98,36 +98,22 @@ export class SmsReminderSendSms implements INodeType {
 					phoneNumber: phoneNumber,
 				};
 				try {
-					const response = await this.helpers.request({
+					await this.helpers.request({
 						method: 'POST',
 						uri: smsApiUrl,
 						body,
 						json: true,
 					});
-					const statusCode = response.statusCode; // Get the status code
-					if (statusCode=== 200) {
-						items[itemIndex] = {
-							json: {
-								...items[itemIndex].json,
-								messageSent,
-								phoneNumber,
-								status: 'Success',
-								statusDate: new Date().toISOString(),
-							},
-							pairedItem: itemIndex,
-						};
-					} else {
-						items[itemIndex] = {
-							json: {
-								...items[itemIndex].json,
-								messageSent,
-								phoneNumber,
-								status: 'Failure',
-								statusDate: new Date().toISOString(),
-							},
-							pairedItem: itemIndex,
-						};
-					}
+					items[itemIndex] = {
+						json: {
+							...items[itemIndex].json,
+							messageSent,
+							phoneNumber,
+							status: 'Success',
+							statusDate: new Date().toISOString(),
+						},
+						pairedItem: itemIndex,
+					};
 				} catch (error) {
 					items[itemIndex] = {
 							json: {
