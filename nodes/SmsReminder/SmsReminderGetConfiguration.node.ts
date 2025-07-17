@@ -89,7 +89,9 @@ export class SmsReminderGetConfiguration implements INodeType {
 					json: {
 						userId: items[itemIndex].json.userId || userId,
 						configurationId: configuration.Id,
-						messageTemplate: configuration.messageTemplate
+						messageTemplate: configuration.messageTemplate,
+						useai: Boolean(configuration.useai) || false,
+						profession: configuration.profession || 'Unknown',
 					},
 					pairedItem: itemIndex,
 				};
