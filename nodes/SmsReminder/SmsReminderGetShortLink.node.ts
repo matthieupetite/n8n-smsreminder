@@ -101,7 +101,7 @@ export class SmsReminderGetShortLink implements INodeType {
 				const eventId = this.getNodeParameter('eventId', itemIndex) as string;
 				const eventDate = this.getNodeParameter('eventDate', itemIndex) as string;
 				const phoneNumber = this.getNodeParameter('phoneNumber', itemIndex) as string;
-				const apiUrl = `${credentials.domain}/api/attendeepresence?userId=${userId}&eventId=${eventId}&eventDate=${eventDate}&phoneNumber=${phoneNumber}`;
+				const apiUrl = `${credentials.domain}/api/attendeepresence/shortlink?userId=${userId}&eventId=${eventId}&eventDate=${eventDate}&phoneNumber=${phoneNumber}`;
 				const response = await this.helpers.request({
 							method: 'GET',
 							url: apiUrl,
