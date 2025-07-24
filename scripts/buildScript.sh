@@ -1,8 +1,8 @@
 #!/bin/bash
 # This script builds the project and handles errors gracefully
 set -e  # Exit immediately if a command exits with a non-zero status
-rm -rf /.n8n/custom
-mkdir /.n8n/custom
+rm -rf /.n8n/custom/*
+rm -rf /.n8n/custom/.*
 npm install
 npm run build
 cd /.n8n/custom
