@@ -5,15 +5,14 @@ rm -rf /.n8n/custom/*
 rm -rf /.n8n/custom/.[!.]*
 npm install
 npm run build
-mkdir -p /.n8n/custom
+mkdir -p /.n8n/custom/n8n-nodes-sms-reminder
+cp -R ./dist/* /.n8n/custom/n8n-nodes-sms-reminder/
 cd /.n8n/custom
 npm init -y
-mkdir -p /.n8n/custom/n8n-nodes-sms-reminder
-cp -R /usr/src/app/dist/* /.n8n/custom/n8n-nodes-sms-reminder/
+
 cd /.n8n/custom/n8n-nodes-sms-reminder
 npm link
 cd /.n8n/custom/ && npm link n8n-nodes-sms-reminder
-
-
-
+ls -la /.n8n/custom/
+chown -R 1000:1000 /.n8n/custom/
 
