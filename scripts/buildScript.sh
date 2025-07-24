@@ -1,38 +1,18 @@
 #!/bin/bash
-set -e
-
-# Variables
-CUSTOM_DIR="/.n8n/custom"
-MODULE_NAME="n8n-nodes-sms-reminder"
-MODULE_PATH="$CUSTOM_DIR/node_modules/$MODULE_NAME"
-SRC_DIR="/usr/src/app"
-
-# Ensure user with UID 1000 has rw access to /.n8n
-chown -R 1000:1000 /.n8n
-chmod -R u+rw /.n8n
-
-# Create the custom directory if it does not exist
-mkdir -p "$CUSTOM_DIR"
-
-# Clean only the target module folder
-rm -rf "$MODULE_PATH"
-
-# Ensure /.n8n/custom has a package.json
-if [ ! -f "$CUSTOM_DIR/package.json" ]; then
-	cd "$CUSTOM_DIR"
-	npm init -y
-fi
-
-# Copy the entire custom node source code into the custom node_modules folder
-mkdir -p "$MODULE_PATH"
-cp -R "$SRC_DIR/"* "$MODULE_PATH/"
-
-# Install dependencies in /.n8n/custom
-cd "$CUSTOM_DIR"
+# This script builds the project and handles errors gracefully
+set -e  # Exit immediately if a command exits with a non-zero status
+rm -rf /.n8n/custom/*
+rm -rf /.n8n/custom/.[!.]*
 npm install
-
-# Optionally, build from within the custom folder if needed
-npm run build || true
+npm run build
+mkdir -p /.n8n/custom
+cd /.n8n/custom
+npm init -y
+mkdir -p /.n8n/custom/n8n-nodes-sms-reminder
+cp -R /usr/src/app/dist/* /.n8n/custom/n8n-nodes-sms-reminder/
+cd /.n8n/custom/n8n-nodes-sms-reminder
+npm link
+cd /.n8n/custom/ && npm link n8n-nodes-sms-reminder
 
 
 
