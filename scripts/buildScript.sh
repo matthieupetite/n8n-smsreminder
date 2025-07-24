@@ -7,6 +7,13 @@ MODULE_NAME="n8n-nodes-sms-reminder"
 MODULE_PATH="$CUSTOM_DIR/node_modules/$MODULE_NAME"
 SRC_DIR="/usr/src/app"
 
+# Ensure user with UID 1000 has rw access to /.n8n
+chown -R 1000:1000 /.n8n
+chmod -R u+rw /.n8n
+
+# Create the custom directory if it does not exist
+mkdir -p "$CUSTOM_DIR"
+
 # Clean only the target module folder
 rm -rf "$MODULE_PATH"
 
