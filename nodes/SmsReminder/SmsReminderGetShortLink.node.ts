@@ -10,7 +10,7 @@ import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
 export class SmsReminderGetShortLink implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'SMSReminder: Get User Configuration',
+		displayName: 'SMSReminder: Get Short Link',
 		name: 'smsReminderGetShortLink',
 		group: ['SmsReminder'],
 		icon: 'file:SmsReminder.svg',
