@@ -97,10 +97,10 @@ export class SmsReminderGetShortLink implements INodeType {
 			// The response will be stored in the items array.
 			for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
 
-				const userId = encodeURIComponent(this.getNodeParameter('userId', itemIndex) as string);
-				const eventId = encodeURIComponent(this.getNodeParameter('eventId', itemIndex) as string);
-				const eventDate = encodeURIComponent(this.getNodeParameter('eventDate', itemIndex) as string);
-				const phoneNumber = encodeURIComponent(this.getNodeParameter('phoneNumber', itemIndex) as string);
+				const userId = this.getNodeParameter('userId', itemIndex);
+				const eventId = this.getNodeParameter('eventId', itemIndex);
+				const eventDate = this.getNodeParameter('eventId', itemIndex);
+				const phoneNumber = this.getNodeParameter('phoneNumber', itemIndex);
 				const apiUrl = `${credentials.domain}/api/attendeepresence/shortlink?userId=${userId}&eventId=${eventId}&eventDate=${eventDate}&phoneNumber=${phoneNumber}`;
 				const response = await this.helpers.request({
 							method: 'GET',
