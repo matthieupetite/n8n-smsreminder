@@ -75,7 +75,7 @@ export class SmsReminderGetShortLink implements INodeType {
 			{
 				displayName: 'Event Date',
 				name: 'eventDate',
-				type: 'dateTime',
+				type: 'string',
 				default: '',
 				required: true,
 				description: 'The date of the event to retrieve the short link for',
@@ -97,11 +97,11 @@ export class SmsReminderGetShortLink implements INodeType {
 			// The response will be stored in the items array.
 			for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
 
-				const userId = this.getNodeParameter('userId', itemIndex);
-				const eventId = this.getNodeParameter('eventId', itemIndex);
-				const eventDate = this.getNodeParameter('eventDate', itemIndex);
-				const phoneNumber = this.getNodeParameter('phoneNumber', itemIndex);
-				const apiUrl = `${credentials.domain}/api/attendeepresence/shortlink?userId=${userId}&eventId=${eventId}&eventDate=${eventDate}&phoneNumber=${phoneNumber}`;
+				const userId = this.getNodeParameter('userId', itemIndex)?.toString() ?? '';
+				const eventId = this.getNodeParameter('eventId', itemIndex)?.toString() ?? '';
+				const eventDate = this.getNodeParameter('eventDate', itemIndex)?.toString() ?? '';
+				const phoneNumber = this.getNodeParameter('phoneNumber', itemIndex)?.toString() ?? '';
+				const apiUrl = `${credentials.domain}/api/attendeepresence/shortlink?userId=${encodeURIComponent(userId)}&eventId=${encodeURIComponent(eventId)}&startDate=${encodeURIComponent(eventDate).replace(/%20/g, '+')}&phoneNumber=${encodeURIComponent(phoneNumber).replace(/%20/g, '+')}`;
 				const response = await this.helpers.request({
 							method: 'GET',
 							url: apiUrl,
