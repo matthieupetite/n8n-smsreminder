@@ -6,21 +6,21 @@ import {
 	LoggerProxy as Logger
 } from 'n8n-workflow';
 
-import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 
 export class SmsReminderGetUserToProcess implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'SMSReminder: Get User to Process',
 		name: 'smsReminderGetUserToProcess',
-		group: ['SmsReminder'],
+		group: ['output','input','transform'],
 		icon: 'file:SmsReminder.svg',
 		version: 1,
 		description: 'Sms Reminder Node for n8n',
 		defaults: {
 			name: 'SMS Reminder',
 		},
-		inputs: [NodeConnectionType.Main],
-		outputs: [NodeConnectionType.Main],
+		inputs: ['main'],
+		outputs: ['main'],
 		credentials: [
 			{
 				name: 'smsReminderApi',
@@ -55,10 +55,15 @@ export class SmsReminderGetUserToProcess implements INodeType {
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 		const credentials = await this.getCredentials('smsReminderApi');
-		Logger.info(`Executing get User to process with credentials: ${JSON.stringify(credentials)}`);
-		Logger.info(`Using SMS Reminder API URL: ${credentials.domain}/api/user/userstoprocess`);
 		const apiUrl = `${credentials.domain}/api/user/userstoprocess`;
+
+		Logger.info(`[SmsReminderGetUserToProcess] Starting execution`);
+		Logger.info(`[SmsReminderGetUserToProcess] API URL: ${apiUrl}`);
+		Logger.debug(`[SmsReminderGetUserToProcess] Credentials domain: ${credentials.domain}`);
+
 		try {
+				Logger.info(`[SmsReminderGetUserToProcess] Sending GET request to ${apiUrl}`);
+				const startTime = Date.now();
 				const response = await this.helpers.request({
 						method: 'GET',
 						url: apiUrl,
@@ -68,11 +73,17 @@ export class SmsReminderGetUserToProcess implements INodeType {
 						},
 				});
 
-				Logger.debug(`Response from ${apiUrl}: ${JSON.stringify(response)}`);
+				const duration = Date.now() - startTime;
+				Logger.info(`[SmsReminderGetUserToProcess] Request completed in ${duration}ms`);
+				Logger.debug(`[SmsReminderGetUserToProcess] Response received: ${JSON.stringify(response)}`);
 					// Vérifier que la réponse contient un tableau "users"
 				if (response && Array.isArray(JSON.parse(response).users)) {
+						const parsedResponse = JSON.parse(response);
+						const userCount = parsedResponse.users.length;
+						Logger.info(`[SmsReminderGetUserToProcess] Found ${userCount} users to process`);
+
 						// Créer une liste d'items à partir des "users"
-						const userItems = JSON.parse(response).users.map((userId: string) => ({
+						const userItems = parsedResponse.users.map((userId: string) => ({
 								json: {
 									userId: userId,
 									processDate: new Date(Date.now()).toISOString(), // Ajout de la date de traitement
@@ -80,16 +91,27 @@ export class SmsReminderGetUserToProcess implements INodeType {
 								} // Chaque item contient un champ "userId"
 						}));
 
+						Logger.info(`[SmsReminderGetUserToProcess] Successfully created ${userItems.length} items`);
 						// Retourner la liste d'items
 						return [userItems];
 
 				} else {
+						Logger.error(`[SmsReminderGetUserToProcess] Invalid response format: "users" array not found`);
+						Logger.error(`[SmsReminderGetUserToProcess] Response received: ${JSON.stringify(response)}`);
 						throw new NodeOperationError(this.getNode(), 'Invalid response format: "users" array not found.');
 				}
 
 		} catch (error) {
-				Logger.error(`Failed to retrieve user to process. URL: ${apiUrl}, Error: ${error.response?.data || error.message}`);
+				Logger.error(`[SmsReminderGetUserToProcess] Failed to retrieve users to process`);
+				Logger.error(`[SmsReminderGetUserToProcess] URL: ${apiUrl}`);
+				Logger.error(`[SmsReminderGetUserToProcess] Error: ${error.message}`);
+				if (error.response) {
+					Logger.error(`[SmsReminderGetUserToProcess] Response status: ${error.response.status}`);
+					Logger.error(`[SmsReminderGetUserToProcess] Response data: ${JSON.stringify(error.response.data)}`);
+				}
+
 				if (this.continueOnFail()) {
+					Logger.warn(`[SmsReminderGetUserToProcess] Continuing on fail, returning error in item`);
 					items.push({ json: this.getInputData(0)[0].json, error, pairedItem: 0 });
 				} else {
 					// Adding `itemIndex` allows other workflows to handle this error

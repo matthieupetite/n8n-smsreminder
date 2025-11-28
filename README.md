@@ -12,13 +12,13 @@ If you would like your node to be available on n8n cloud you can also [submit yo
 
 You need the following installed on your development machine:
 
-* [git](https://git-scm.com/downloads)
-* Node.js and npm. Minimum version Node 20. You can find instructions on how to install both using nvm (Node Version Manager) for Linux, Mac, and WSL [here](https://github.com/nvm-sh/nvm). For Windows users, refer to Microsoft's guide to [Install NodeJS on Windows](https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows).
-* Install n8n with:
+- [git](https://git-scm.com/downloads)
+- Node.js and npm. Minimum version Node 20. You can find instructions on how to install both using nvm (Node Version Manager) for Linux, Mac, and WSL [here](https://github.com/nvm-sh/nvm). For Windows users, refer to Microsoft's guide to [Install NodeJS on Windows](https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows).
+- Install n8n with:
   ```
   npm install n8n -g
   ```
-* Recommended: follow n8n's guide to [set up your development environment](https://docs.n8n.io/integrations/creating-nodes/build/node-development-environment/).
+- Recommended: follow n8n's guide to [set up your development environment](https://docs.n8n.io/integrations/creating-nodes/build/node-development-environment/).
 
 ## Using this starter
 
@@ -46,3 +46,69 @@ Refer to our [documentation on creating nodes](https://docs.n8n.io/integrations/
 ## License
 
 [MIT](https://github.com/n8n-io/n8n-nodes-starter/blob/master/LICENSE.md)
+
+## How to start the project locally
+
+### Development Setup
+
+1. **Install dependencies:**
+
+   ```bash
+   npm install
+   ```
+
+2. **Build the nodes:**
+
+   ```bash
+   npm run build
+   ```
+
+3. **Install the custom nodes in n8n:**
+
+   ```bash
+   cd ~/.n8n/nodes
+   npm install /path/to/your/n8n-nodes-sms-reminder
+   ```
+
+4. **Start n8n:**
+
+   ```bash
+   npx n8n
+   ```
+
+   Your SMS Reminder nodes will now be available in the n8n UI.
+
+### Development Workflow
+
+For active development with automatic recompilation:
+
+1. **Terminal 1 - Watch mode (auto-compile on file changes):**
+
+   ```bash
+   npm run dev
+   ```
+
+2. **Terminal 2 - Run n8n:**
+   ```bash
+   npx n8n
+   ```
+
+When you make changes to your nodes:
+
+- TypeScript will automatically recompile (if using `npm run dev`)
+- Restart n8n to see your changes (Ctrl+C and run `npx n8n` again)
+
+### Finding Your Nodes in n8n
+
+Once n8n is running:
+
+1. Open n8n in your browser (default: http://localhost:5678)
+2. Create a new workflow
+3. Click the "+" to add a node
+4. Search for "SMS" or "Reminder" to find your custom nodes:
+   - SMSReminder: Get User Appointments
+   - SMSReminder: Get Configuration
+   - SMSReminder: Get Short Link
+   - SMSReminder: Get User To Process
+   - SMSReminder: Send SMS
+   - SMSReminder: Send SMS Report

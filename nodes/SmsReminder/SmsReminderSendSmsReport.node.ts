@@ -3,24 +3,23 @@ import {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	LoggerProxy as Logger
+	LoggerProxy as Logger,
+	NodeOperationError
 } from 'n8n-workflow';
-
-import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
 export class SmsReminderSendSmsReport implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'SMSReminder: Send SMS Report',
 		name: 'smsReminderSendSmsReport',
-		group: ['SmsReminder'],
+		group: ['output','input','transform'],
 		icon: 'file:SmsReminder.svg',
 		version: 1,
 		description: 'Sms Reminder Node for n8n',
 		defaults: {
 			name: 'SMS Reminder',
 		},
-		inputs: [NodeConnectionType.Main],
-		outputs: [NodeConnectionType.Main],
+		inputs: ['main'],
+		outputs: ['main'],
 		credentials: [
 			{
 				name: 'smsReminderApi',
@@ -107,8 +106,9 @@ export class SmsReminderSendSmsReport implements INodeType {
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 		const credentials = await this.getCredentials('smsReminderApi');
-		Logger.info(`Executing get User Configuration with credentials: ${JSON.stringify(credentials)}`);
-		Logger.info(`Using SMS Reminder API URL: ${credentials.domain}/api/user/userstoprocess`);
+		
+		Logger.info(`[SmsReminderSendSmsReport] Starting execution with ${items.length} input items`);
+		Logger.debug(`[SmsReminderSendSmsReport] Credentials domain: ${credentials.domain}`);
 
 		try {
 			// Loop through each item in the input data
@@ -123,30 +123,64 @@ export class SmsReminderSendSmsReport implements INodeType {
 				const reportDate = this.getNodeParameter('reportDate', itemIndex) as string;
 				const reportStatus = this.getNodeParameter('reportStatus', itemIndex) as string;
 				const eventId = this.getNodeParameter('eventId', itemIndex) as string;
-				Logger.debug(`User ID: ${userId}, Message: ${messageSent}, Phone Number: ${phoneNumber}, Report Date: ${reportDate}, Report Status: ${reportStatus}, Event ID: ${eventId}`);
 				const apiUrl = `${credentials.domain}/api/sms`;
+				
+				const body = {
+					userid: userId,
+					message: messageSent,
+					phonenumber: phoneNumber,
+					messagereportdate : reportDate,
+					status: reportStatus,
+					eventid: eventId,
+				};
+				
+				Logger.info(`[SmsReminderSendSmsReport] Processing item ${itemIndex + 1}/${items.length}`);
+				Logger.info(`[SmsReminderSendSmsReport] API URL: ${apiUrl}`);
+				Logger.debug(`[SmsReminderSendSmsReport] Parameters - userId: ${userId}, phoneNumber: ${phoneNumber}, eventId: ${eventId}, status: ${reportStatus}, reportDate: ${reportDate}`);
+				Logger.debug(`[SmsReminderSendSmsReport] Request body: ${JSON.stringify(body)}`);
 
-				await this.helpers.request({
-							method: 'POST',
-							url: apiUrl,
-							headers: {
-								'WorkerSecret': `${credentials.token}`,
-								'Content-Type': 'application/json',
-							},
-							body: {
-								userid: userId,
-								message: messageSent,
-								phonenumber: phoneNumber,
-								messagereportdate : reportDate,
-								status: reportStatus,
-								eventid: eventId,
-							},
-							json: true,
-				});
+				try {
+					Logger.info(`[SmsReminderSendSmsReport] Sending POST request to ${apiUrl}`);
+					const startTime = Date.now();
+					
+					const response = await this.helpers.request({
+								method: 'POST',
+								url: apiUrl,
+								headers: {
+									'WorkerSecret': `${credentials.token}`,
+									'Content-Type': 'application/json',
+								},
+								body,
+								json: true,
+					});
+					
+					const duration = Date.now() - startTime;
+					Logger.info(`[SmsReminderSendSmsReport] Report sent successfully in ${duration}ms`);
+					Logger.debug(`[SmsReminderSendSmsReport] Response: ${JSON.stringify(response)}`);
+					Logger.info(`[SmsReminderSendSmsReport] Item ${itemIndex + 1} processed successfully`);
+					
+				} catch (error) {
+					Logger.error(`[SmsReminderSendSmsReport] Failed to send SMS report for item ${itemIndex + 1}`);
+					Logger.error(`[SmsReminderSendSmsReport] API URL: ${apiUrl}`);
+					Logger.error(`[SmsReminderSendSmsReport] Request body: ${JSON.stringify(body)}`);
+					Logger.error(`[SmsReminderSendSmsReport] Error: ${error.message}`);
+					if (error.statusCode) {
+						Logger.error(`[SmsReminderSendSmsReport] Status code: ${error.statusCode}`);
+					}
+					if (error.response) {
+						Logger.error(`[SmsReminderSendSmsReport] Response status: ${error.response.status}`);
+						Logger.error(`[SmsReminderSendSmsReport] Response data: ${JSON.stringify(error.response.data)}`);
+					}
+					throw error;
+				}
 			}
 
 		} catch (error) {
+				Logger.error(`[SmsReminderSendSmsReport] Execution failed`);
+				Logger.error(`[SmsReminderSendSmsReport] Error details: ${error.message}`);
+				
 				if (this.continueOnFail()) {
+					Logger.warn(`[SmsReminderSendSmsReport] Continuing on fail, adding error to items`);
 					items.push({ json: this.getInputData(0)[0].json, error, pairedItem: 0 });
 				} else {
 					// Adding `itemIndex` allows other workflows to handle this error
@@ -161,6 +195,8 @@ export class SmsReminderSendSmsReport implements INodeType {
 					});
 				}
 		}
+		
+		Logger.info(`[SmsReminderSendSmsReport] Execution completed, returning ${items.length} items`);
 		return [items];
 	}
 }

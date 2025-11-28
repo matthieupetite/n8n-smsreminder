@@ -36,12 +36,12 @@
       "dist/credentials/SmsReminderApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/SmsReminder/SmsReminder.node.js",
       "dist/nodes/SmsReminder/SmsReminderGetShortLink.node.js",
       "dist/nodes/SmsReminder/SmsReminderGetAppointments.node.js",
       "dist/nodes/SmsReminder/SmsReminderGetUserToProcess.node.js",
       "dist/nodes/SmsReminder/SmsReminderSendSms.node.js",
-      "dist/nodes/SmsReminder/SmsReminderSendSmsReport.node.js"
+      "dist/nodes/SmsReminder/SmsReminderSendSmsReport.node.js",
+      "dist/nodes/SmsReminder/SmsReminderGetConfiguration.node.js"
     ]
   },
   "devDependencies": {
@@ -54,5 +54,8 @@
   },
   "peerDependencies": {
     "n8n-workflow": "*"
+  },
+  "dependencies": {
+    "n8n": "^1.121.2"
   }
 }
