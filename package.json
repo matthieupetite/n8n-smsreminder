@@ -21,6 +21,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npx rimraf dist && tsc && gulp build:icons",
+    "start":"npx nodemon --watch dist --exec \"npx n8n\"",
     "dev": "tsc --watch",
     "format": "prettier nodes credentials --write",
     "lint": "eslint nodes credentials package.json",
@@ -33,7 +34,8 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
-      "dist/credentials/SmsReminderApi.credentials.js"
+      "dist/credentials/SmsReminderApi.credentials.js",
+      "dist/credentials/PixabayApi.credentials.js"
     ],
     "nodes": [
       "dist/nodes/SmsReminder/SmsReminderGetShortLink.node.js",
@@ -41,7 +43,9 @@
       "dist/nodes/SmsReminder/SmsReminderGetUserToProcess.node.js",
       "dist/nodes/SmsReminder/SmsReminderSendSms.node.js",
       "dist/nodes/SmsReminder/SmsReminderSendSmsReport.node.js",
-      "dist/nodes/SmsReminder/SmsReminderGetConfiguration.node.js"
+      "dist/nodes/SmsReminder/SmsReminderGetConfiguration.node.js",
+      "dist/nodes/Strapi/StrapiUploadFile.node.js",
+      "dist/nodes/Pixabay/PixabayGetImages.node.js"
     ]
   },
   "devDependencies": {
