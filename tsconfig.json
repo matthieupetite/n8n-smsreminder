@@ -16,12 +16,9 @@
 		"esModuleInterop": true,
 		"resolveJsonModule": true,
 		"incremental": true,
-		"tsBuildInfoFile": "./dist/.tsbuildinfo",
 		"declaration": true,
 		"sourceMap": true,
 		"skipLibCheck": true,
-		"skipDefaultLibCheck": true,
-		"assumeChangesOnlyAffectDirectDependencies": true,
 		"outDir": "./dist/",
 	},
 	"include": [

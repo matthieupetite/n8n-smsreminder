@@ -14,17 +14,16 @@ RUN npm install
 COPY . .
 
 # Build the TypeScript project
-RUN npm run build
+RUN npm run build:clean
 
 # Create the /.n8n/custom directory
 RUN mkdir -p /.n8n/custom
 
-# Copy the built files to the /.n8n/custom directory
-RUN cp -r ./dist/* /.n8n/custom/
-# Set /.n8n/custom as a volume
-VOLUME ["/.n8n/custom"]
-# Expose the default n8n port
+# Make the build script executable
 RUN chmod +x /usr/src/app/scripts/buildScript.sh
 
-# Start the n8n service
-CMD ["/bin/bash", "-c", "/usr/src/app/scripts/buildScript.sh"]
+# Set /.n8n/custom as a volume (this will be mounted by the main n8n container)
+VOLUME ["/.n8n/custom"]
+
+# Start the build and packaging script
+CMD ["/bin/bash", "-c", "/usr/src/app/scripts/buildScript.sh && tail -f /dev/null"]

@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # Init container that builds and prepares custom nodes
+  custom-nodes-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: n8n-custom-nodes-builder:latest
+    volumes:
+      - n8n_custom:/.n8n/custom
+    container_name: n8n-custom-nodes-builder
+    restart: 'no' # Init container runs once
+
+  # Main n8n service
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - '5678:5678'
+    environment:
+      # Point n8n to load custom nodes from the shared volume
+      - N8N_CUSTOM_EXTENSIONS=/data/custom
+      # Basic auth (change these!)
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=changeme
+      # Other recommended settings
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - DB_SQLITE_POOL_SIZE=3
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - n8n_custom:/data/custom:ro # Mount custom nodes as read-only
+    depends_on:
+      - custom-nodes-builder
+
+volumes:
+  n8n_data:
+    name: n8n_data
+  n8n_custom:
+    name: n8n_custom
