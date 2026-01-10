@@ -25,5 +25,5 @@ RUN chmod +x /usr/src/app/scripts/buildScript.sh
 # Set /.n8n/custom as a volume (this will be mounted by the main n8n container)
 VOLUME ["/.n8n/custom"]
 
-# Start the build and packaging script
-CMD ["/bin/bash", "-c", "/usr/src/app/scripts/buildScript.sh && tail -f /dev/null"]
+# Start the build and packaging script (exits when done)
+CMD ["/bin/bash", "/usr/src/app/scripts/buildScript.sh"]
