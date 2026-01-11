@@ -17,13 +17,13 @@ COPY . .
 RUN npm run build:clean
 
 # Create the /.n8n/custom directory
-RUN mkdir -p /.n8n/custom
+RUN mkdir -p /home/node/.n8n/custom
 
 # Make the build script executable
 RUN chmod +x /usr/src/app/scripts/buildScript.sh
 
 # Set /.n8n/custom as a volume (this will be mounted by the main n8n container)
-VOLUME ["/.n8n/custom"]
+VOLUME ["/home/node/.n8n/custom"]
 
 # Start the build and packaging script (exits when done)
 CMD ["/bin/bash", "/usr/src/app/scripts/buildScript.sh"]
