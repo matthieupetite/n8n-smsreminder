@@ -20,12 +20,20 @@ cd /home/node/.n8n/custom/
 # Initialize as an npm project
 npm init -y
 
-# Install the custom nodes package from the build directory
-npm install /usr/src/app --production --no-package-lock
+# Create a tarball to force npm to copy files instead of symlinking
+cd /usr/src/app
+npm pack
+
+# Install from the tarball (this copies files instead of creating symlinks)
+cd /home/node/.n8n/custom/
+npm install /usr/src/app/n8n-nodes-sms-reminder-*.tgz --production --no-package-lock
+
+# Clean up the tarball
+rm -f /usr/src/app/n8n-nodes-sms-reminder-*.tgz
 
 # Verify installation
 echo "\n=== Custom nodes installed ==="
-ls -la /home/node/.n8n/custom/
+ls -la /home/node/.n8n/custom/node_modules/
 echo "\n=== Package contents ==="
 ls -la /home/node/.n8n/custom/node_modules/n8n-nodes-sms-reminder/ || echo "Package not found!"
 
