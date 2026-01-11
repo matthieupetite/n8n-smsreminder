@@ -14,28 +14,28 @@ npm run build:clean
 
 # Create the proper directory structure for N8N_CUSTOM_EXTENSIONS
 # n8n expects this directory to contain installed npm packages
-mkdir -p /home/node/.n8n/custom/
-cd /home/node/.n8n/custom/
+mkdir -p /home/node/.n8n/custom/node_modules/n8n-nodes-sms-reminder
 
-# Initialize as an npm project
-npm init -y
+# Manually copy the package files (avoids installing dependencies)
+cp -R /usr/src/app/dist /home/node/.n8n/custom/node_modules/n8n-nodes-sms-reminder/
+cp /usr/src/app/package.json /home/node/.n8n/custom/node_modules/n8n-nodes-sms-reminder/
+cp /usr/src/app/index.js /home/node/.n8n/custom/node_modules/n8n-nodes-sms-reminder/ 2>/dev/null || true
 
-# Create a tarball to force npm to copy files instead of symlinking
-cd /usr/src/app
-npm pack
-
-# Install from the tarball (this copies files instead of creating symlinks)
-cd /home/node/.n8n/custom/
-npm install /usr/src/app/n8n-nodes-sms-reminder-*.tgz --production --no-package-lock
-
-# Clean up the tarball
-rm -f /usr/src/app/n8n-nodes-sms-reminder-*.tgz
+# Create a minimal package.json in the custom directory
+cat > /home/node/.n8n/custom/package.json <<EOF
+{
+  "name": "n8n-custom-extensions",
+  "version": "1.0.0",
+  "description": "Custom n8n nodes container",
+  "private": true
+}
+EOF
 
 # Verify installation
 echo "\n=== Custom nodes installed ==="
 ls -la /home/node/.n8n/custom/node_modules/
 echo "\n=== Package contents ==="
-ls -la /home/node/.n8n/custom/node_modules/n8n-nodes-sms-reminder/ || echo "Package not found!"
+ls -la /home/node/.n8n/custom/node_modules/n8n-nodes-sms-reminder/
 
 # Set proper permissions for n8n user (UID 1000)
 chown -R 1000:1000 /home/node/.n8n/custom/
