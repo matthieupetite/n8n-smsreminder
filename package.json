@@ -44,6 +44,7 @@
       "dist/nodes/SmsReminder/SmsReminderGetShortLink.node.js",
       "dist/nodes/SmsReminder/SmsReminderGetAppointments.node.js",
       "dist/nodes/SmsReminder/SmsReminderGetUserToProcess.node.js",
+      "dist/nodes/SmsReminder/SmsReminderGetUserToProcessV2.node.js",
       "dist/nodes/SmsReminder/SmsReminderSendSms.node.js",
       "dist/nodes/SmsReminder/SmsReminderSendSmsReport.node.js",
       "dist/nodes/SmsReminder/SmsReminderGetConfiguration.node.js",
