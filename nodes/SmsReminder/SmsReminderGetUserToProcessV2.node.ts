@@ -81,18 +81,20 @@ export class SmsReminderGetUserToProcessV2 implements INodeType {
 
 				const now = new Date(Date.now());
 				const processDate = now.toISOString();
-				const processRoundedToHourDate =
-					processDate.split('T')[0] + 'T' + processDate.split('T')[1].split(':')[0] + ':00:00.000Z';
+				// Round down to the current whole hour (e.g. 13:32 → 13:00)
+				const roundedNow = new Date(now);
+				roundedNow.setMinutes(0, 0, 0);
+				const processRoundedToHourDate = roundedNow.toISOString();
 
 				// Each item is a (userId, calendarId, reminderDelayHours) tuple.
 				// A user with 2 active delays appears twice — n8n iterates linearly.
 				const userItems: INodeExecutionData[] = parsedResponse.users.map(
 					(entry: { userId: string; calendarId: string; reminderDelayHours: number }) => {
 						// Compute the appointment window this reminder should target:
-						//   begin = now + reminderDelayHours
-						//   end   = begin + 1 hour (execution interval)
-						const beginDate = new Date(now.getTime() + entry.reminderDelayHours * 60 * 60 * 1000);
-						const endDate = new Date(beginDate.getTime() + 60 * 60 * 1000);
+						//   begin = roundedNow + reminderDelayHours
+						//   end   = begin + 1 hour − 1 minute (to avoid overlap with next window)
+						const beginDate = new Date(roundedNow.getTime() + entry.reminderDelayHours * 60 * 60 * 1000);
+						const endDate = new Date(beginDate.getTime() + 59 * 60 * 1000); // +59 min
 
 						return {
 							json: {

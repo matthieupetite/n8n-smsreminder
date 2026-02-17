@@ -165,7 +165,7 @@ export class SmsReminderGetAppointments implements INodeType {
 					Logger.warn(`[SmsReminderGetAppointments] Continuing on fail, adding error to return data`);
 					returnData.push({
 						json: {
-							...this.getInputData(itemIndex)[0].json,
+							...items[itemIndex].json,
 							error: error.message
 						},
 						pairedItem: itemIndex
