@@ -21,6 +21,16 @@ cp -R /usr/src/app/dist /home/node/.n8n/custom/node_modules/n8n-nodes-sms-remind
 cp /usr/src/app/package.json /home/node/.n8n/custom/node_modules/n8n-nodes-sms-reminder/
 cp /usr/src/app/index.js /home/node/.n8n/custom/node_modules/n8n-nodes-sms-reminder/ 2>/dev/null || true
 
+# Copy community node packages into custom extensions directory
+for pkg in n8n-nodes-pennylane; do
+  if [ -d "/usr/src/app/node_modules/$pkg" ]; then
+    echo "Installing community node package: $pkg"
+    cp -R "/usr/src/app/node_modules/$pkg" "/home/node/.n8n/custom/node_modules/$pkg"
+  else
+    echo "WARNING: community node package $pkg not found in node_modules"
+  fi
+done
+
 # Create a minimal package.json in the custom directory
 cat > /home/node/.n8n/custom/package.json <<EOF
 {
