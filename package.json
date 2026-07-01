@@ -49,6 +49,8 @@
       "dist/nodes/SmsReminder/SmsReminderSendSmsReport.node.js",
       "dist/nodes/SmsReminder/SmsReminderGetConfiguration.node.js",
       "dist/nodes/SmsReminder/SmsReminderProcessEvent.node.js",
+      "dist/nodes/SmsReminder/SmsReminderUpdateUserAccountingId.node.js",
+      "dist/nodes/SmsReminder/SmsReminderUpdateInvoiceAccountingId.node.js",
       "dist/nodes/Strapi/StrapiUploadFile.node.js",
       "dist/nodes/Pixabay/PixabayGetImages.node.js"
     ]
