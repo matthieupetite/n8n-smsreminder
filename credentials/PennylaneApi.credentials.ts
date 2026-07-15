@@ -16,7 +16,7 @@ export class PennylaneApi implements ICredentialType {
       name: 'companyId',
       type: 'string',
       default: '',
-      required: true,
+      required: false,
     },
   ];
 }
