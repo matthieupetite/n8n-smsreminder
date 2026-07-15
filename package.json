@@ -38,7 +38,8 @@
     "n8nNodesApiVersion": 1,
     "credentials": [
       "dist/credentials/SmsReminderApi.credentials.js",
-      "dist/credentials/PixabayApi.credentials.js"
+      "dist/credentials/PixabayApi.credentials.js",
+      "dist/credentials/PennylaneApi.credentials.js"
     ],
     "nodes": [
       "dist/nodes/SmsReminder/SmsReminderGetShortLink.node.js",
@@ -52,11 +53,12 @@
       "dist/nodes/SmsReminder/SmsReminderUpdateUserAccountingId.node.js",
       "dist/nodes/SmsReminder/SmsReminderUpdateInvoiceAccountingId.node.js",
       "dist/nodes/Strapi/StrapiUploadFile.node.js",
-      "dist/nodes/Pixabay/PixabayGetImages.node.js"
+      "dist/nodes/Pixabay/PixabayGetImages.node.js",
+      "dist/nodes/Pennylane/Pennylane.node.js",
+      "dist/triggers/PennylaneTrigger/PennylaneTrigger.node.js"
     ]
   },
   "dependencies": {
-    "n8n-nodes-pennylane": "^0.1.5"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "~8.52.0",
