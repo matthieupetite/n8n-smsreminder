@@ -13,7 +13,7 @@ export class Pennylane implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Pennylane',
     name: 'pennylane',
-    icon: 'file:pennylane.png',
+    icon: 'file:pennylane.svg',
     group: ['transform'],
     version: 1,
     description: 'n8n community node for Pennylane External API v2 - Complete & Working',

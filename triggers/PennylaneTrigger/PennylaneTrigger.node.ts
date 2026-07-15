@@ -11,7 +11,7 @@ export class PennylaneTrigger implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Pennylane Trigger',
     name: 'pennylaneTrigger',
-    icon: 'file:pennylane.png',
+    icon: 'file:pennylane.svg',
     group: ['trigger'],
     version: 1,
     description: 'Trigger on Pennylane data changes using Changelogs API',
