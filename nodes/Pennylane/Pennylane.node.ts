@@ -1344,6 +1344,43 @@ export class Pennylane implements INodeType {
         },
       },
       {
+        displayName: 'Payment Deadline',
+        name: 'invoiceDeadline',
+        type: 'dateTime',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['create']
+          },
+        },
+        default: '',
+        description: 'Payment deadline date (required by Pennylane API)',
+        required: true,
+        typeOptions: {
+          dateTimePickerOptions: {
+            format: 'yyyy-MM-dd',
+          },
+        },
+      },
+      {
+        displayName: 'Invoice Status',
+        name: 'invoiceDraft',
+        type: 'options',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['create']
+          },
+        },
+        options: [
+          { name: '📝 Draft (Not Finalized)', value: true },
+          { name: '✅ Finalized', value: false },
+        ],
+        default: true,
+        description: 'Whether the invoice is a draft or finalized (required by Pennylane API)',
+        required: true,
+      },
+      {
         displayName: 'Customer',
         name: 'invoiceCustomerId',
         type: 'options',
@@ -1359,6 +1396,152 @@ export class Pennylane implements INodeType {
         default: '',
         description: 'Select the customer',
         required: true,
+      },
+      
+      // === CHAMPS OPTIONNELS COMMUNS ===
+      {
+        displayName: 'Invoice Template',
+        name: 'invoiceTemplateId',
+        type: 'options',
+        typeOptions: {
+          loadOptionsMethod: 'getCustomerInvoiceTemplates',
+        },
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['create']
+          },
+        },
+        default: '',
+        description: 'Select a customer invoice template (optional)',
+      },
+      {
+        displayName: 'Currency',
+        name: 'invoiceCurrency',
+        type: 'options',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['create']
+          },
+        },
+        options: [
+          { name: 'EUR (Euro)', value: 'EUR' },
+          { name: 'USD (US Dollar)', value: 'USD' },
+          { name: 'GBP (British Pound)', value: 'GBP' },
+          { name: 'CHF (Swiss Franc)', value: 'CHF' },
+          { name: 'CAD (Canadian Dollar)', value: 'CAD' },
+        ],
+        default: 'EUR',
+        description: 'Invoice currency',
+      },
+      {
+        displayName: 'Language',
+        name: 'invoiceLanguage',
+        type: 'options',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['create']
+          },
+        },
+        options: [
+          { name: '🇫🇷 French', value: 'fr_FR' },
+          { name: '🇬🇧 English', value: 'en_GB' },
+          { name: '🇩🇪 German', value: 'de_DE' },
+        ],
+        default: 'fr_FR',
+        description: 'Invoice language (defaults to customer billing language if not specified)',
+      },
+      {
+        displayName: 'Invoice Title (PDF)',
+        name: 'invoiceSubject',
+        type: 'string',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['create']
+          },
+        },
+        default: '',
+        description: 'Invoice title (appears on PDF)',
+        placeholder: 'e.g., Consulting Services - January 2024',
+      },
+      {
+        displayName: 'Invoice Description (PDF)',
+        name: 'invoiceDescription',
+        type: 'string',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['create']
+          },
+        },
+        default: '',
+        description: 'Invoice description (appears on PDF, max 5000 characters)',
+        placeholder: 'e.g., Monthly services as per contract',
+        typeOptions: {
+          rows: 4,
+        },
+      },
+      {
+        displayName: 'Additional Contact Info (PDF)',
+        name: 'invoiceFreeText',
+        type: 'string',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['create']
+          },
+        },
+        default: '',
+        description: 'Free text for contact details (appears on PDF)',
+        placeholder: 'e.g., Contact: John Doe - john@example.com',
+      },
+      {
+        displayName: 'Special Mention',
+        name: 'invoiceSpecialMention',
+        type: 'string',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['create']
+          },
+        },
+        default: '',
+        description: 'Additional details (max 20000 characters)',
+        placeholder: 'e.g., Payment terms, special conditions',
+        typeOptions: {
+          rows: 3,
+        },
+      },
+      {
+        displayName: 'Accounting Label',
+        name: 'invoiceLabel',
+        type: 'string',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['create']
+          },
+        },
+        default: '',
+        description: 'Custom label for accounting (ledger) entries. If not provided, Pennylane generates one automatically.',
+        placeholder: 'e.g., Invoice Q1-2024',
+      },
+      {
+        displayName: 'External Reference',
+        name: 'invoiceExternalReference',
+        type: 'string',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['create']
+          },
+        },
+        default: '',
+        description: 'Your unique external reference to track this invoice. If not provided, Pennylane generates one.',
+        placeholder: 'e.g., EXT-2024-001',
       },
       
       // === MÉTHODE SIMPLE ===
@@ -1552,32 +1735,117 @@ export class Pennylane implements INodeType {
                   minValue: 0,
                 },
               },
+              {
+                displayName: 'Line Description',
+                name: 'description',
+                type: 'string',
+                default: '',
+                description: 'Detailed description of the invoice line (optional)',
+                placeholder: 'e.g., Strategic IT consulting for Q1',
+                typeOptions: {
+                  rows: 2,
+                },
+              },
+              {
+                displayName: 'Substance',
+                name: 'substance',
+                type: 'options',
+                options: [
+                  { name: 'Not specified', value: '' },
+                  { name: 'Goods', value: 'goods' },
+                  { name: 'Services', value: 'services' },
+                ],
+                default: '',
+                description: 'Resolves the line ledger account to the company goods or services account (optional)',
+              },
+              {
+                displayName: 'Ledger Account ID',
+                name: 'ledger_account_id',
+                type: 'number',
+                default: 0,
+                description: 'The ledger account ID (optional, overrides product default)',
+                typeOptions: {
+                  minValue: 0,
+                },
+              },
+              {
+                displayName: 'Section Rank',
+                name: 'section_rank',
+                type: 'number',
+                default: 0,
+                description: 'Section number for grouping lines (optional, must match invoice_line_sections)',
+                typeOptions: {
+                  minValue: 0,
+                },
+              },
             ],
           },
         ],
       },
       
       {
-        displayName: 'Global Discount Amount (Optional)',
-        name: 'invoiceGlobalDiscount',
+        displayName: 'Discount Type',
+        name: 'invoiceDiscountType',
+        type: 'options',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['create'],
+            invoiceCreationMethod: ['simple', 'advanced', 'dynamic']
+          },
+        },
+        options: [
+          { name: 'No Discount', value: 'none' },
+          { name: 'Absolute Amount (cents)', value: 'absolute' },
+          { name: 'Percentage (%)', value: 'relative' },
+        ],
+        default: 'none',
+        description: 'Type of global discount to apply',
+      },
+      {
+        displayName: 'Discount Amount (cents)',
+        name: 'invoiceDiscountAmount',
         type: 'number',
         displayOptions: {
           show: { 
             resource: ['customerInvoice'],
             operation: ['create'],
-            invoiceCreationMethod: ['advanced', 'dynamic']
+            invoiceCreationMethod: ['simple', 'advanced', 'dynamic'],
+            invoiceDiscountType: ['absolute']
           },
         },
         default: 0,
-        description: 'Global discount amount in cents (optional)',
+        description: 'Discount amount in cents',
+        required: true,
         typeOptions: {
           minValue: 0,
         },
       },
       {
-        displayName: 'Global Discount Percentage (Optional)',
-        name: 'invoiceGlobalDiscountPercent',
+        displayName: 'Discount Percentage',
+        name: 'invoiceDiscountPercent',
         type: 'number',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['create'],
+            invoiceCreationMethod: ['simple', 'advanced', 'dynamic'],
+            invoiceDiscountType: ['relative']
+          },
+        },
+        default: 0,
+        description: 'Discount percentage (e.g., 10 for 10%)',
+        required: true,
+        typeOptions: {
+          minValue: 0,
+          maxValue: 100,
+          numberPrecision: 2,
+        },
+      },
+      {
+        displayName: 'Invoice Line Sections',
+        name: 'invoiceLineSections',
+        type: 'json',
         displayOptions: {
           show: { 
             resource: ['customerInvoice'],
@@ -1585,13 +1853,9 @@ export class Pennylane implements INodeType {
             invoiceCreationMethod: ['advanced', 'dynamic']
           },
         },
-        default: 0,
-        description: 'Global discount percentage (0-100, optional)',
-        typeOptions: {
-          minValue: 0,
-          maxValue: 100,
-          numberPrecision: 2,
-        },
+        default: '[]',
+        description: 'Array of section objects to group invoice lines: [{"rank": 1, "title": "Section Title", "description": "Optional description"}]',
+        placeholder: '[{"rank": 1, "title": "Consulting Services"}]',
       },
       
       // === MÉTHODE JSON COMPLÈTE ===
@@ -1608,8 +1872,30 @@ export class Pennylane implements INodeType {
         },
         default: `{
   "date": "2024-01-15",
+  "deadline": "2024-02-14",
+  "draft": true,
   "customer_id": 123,
   "currency": "EUR",
+  "language": "fr_FR",
+  "pdf_invoice_subject": "Consulting Services Q1",
+  "pdf_description": "Professional services as per contract",
+  "special_mention": "Payment due within 30 days",
+  "customer_invoice_template_id": 789,
+  "discount": {
+    "type": "relative",
+    "value": "10.00"
+  },
+  "invoice_line_sections": [
+    {
+      "rank": 1,
+      "title": "Consulting Services",
+      "description": "Strategic advisory services"
+    },
+    {
+      "rank": 2,
+      "title": "Development Services"
+    }
+  ],
   "invoice_lines": [
     {
       "product_id": 456,
@@ -1618,13 +1904,22 @@ export class Pennylane implements INodeType {
       "raw_currency_unit_price": "8000",
       "unit": "hour",
       "vat_rate": "FR_200",
-      "discount_amount": "200",
-      "description": "Conseil stratégique IT"
+      "substance": "services",
+      "description": "Strategic IT consulting for Q1",
+      "section_rank": 1
+    },
+    {
+      "product_id": 457,
+      "quantity": "1",
+      "label": "Development",
+      "raw_currency_unit_price": "15000",
+      "unit": "day",
+      "vat_rate": "FR_200",
+      "substance": "services",
+      "section_rank": 2
     }
   ],
-  "global_discount_amount": "500",
-  "payment_terms": "30_days",
-  "notes": "Merci pour votre confiance"
+  "external_reference": "EXT-2024-001"
 }`,
         description: 'Complete invoice JSON with all possible fields',
         required: true,
@@ -2547,6 +2842,18 @@ export class Pennylane implements INodeType {
           return [];
         }
       },
+      async getCustomerInvoiceTemplates(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+        try {
+          const response = await pennylaneApiRequest.call(this, 'GET', '/customer_invoice_templates');
+          const items = response.items || [];
+          return items.map((item: any) => ({
+            name: item.name || item.label || `Template ${item.id}`,
+            value: item.id,
+          }));
+        } catch (error) {
+          return [];
+        }
+      },
       async getProjects(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
         try {
           const response = await pennylaneApiRequest.call(this, 'GET', '/projects');
@@ -3362,7 +3669,47 @@ export class Pennylane implements INodeType {
               const creationMethod = this.getNodeParameter('invoiceCreationMethod', i) as string;
               const invoiceDate = this.getNodeParameter('invoiceDate', i) as string;
               const date = invoiceDate.split('T')[0]; // Convertir la date au format YYYY-MM-DD
+              const invoiceDeadlineRaw = this.getNodeParameter('invoiceDeadline', i) as string;
+              const deadline = invoiceDeadlineRaw.split('T')[0]; // Convertir la date au format YYYY-MM-DD
+              const draft = this.getNodeParameter('invoiceDraft', i) as boolean;
               const customer_id = this.getNodeParameter('invoiceCustomerId', i) as number;
+              
+              // Champs optionnels communs
+              const invoiceTemplateId = this.getNodeParameter('invoiceTemplateId', i) as number;
+              const currency = this.getNodeParameter('invoiceCurrency', i) as string;
+              const language = this.getNodeParameter('invoiceLanguage', i) as string;
+              const pdf_invoice_subject = this.getNodeParameter('invoiceSubject', i) as string;
+              const pdf_description = this.getNodeParameter('invoiceDescription', i) as string;
+              const pdf_invoice_free_text = this.getNodeParameter('invoiceFreeText', i) as string;
+              const special_mention = this.getNodeParameter('invoiceSpecialMention', i) as string;
+              const label = this.getNodeParameter('invoiceLabel', i) as string;
+              const external_reference = this.getNodeParameter('invoiceExternalReference', i) as string;
+              
+              // Gestion du discount structuré
+              const discountType = this.getNodeParameter('invoiceDiscountType', i) as string;
+              let discount: any = null;
+              if (discountType === 'absolute') {
+                const discountAmount = this.getNodeParameter('invoiceDiscountAmount', i) as number;
+                discount = {
+                  type: 'absolute',
+                  value: discountAmount.toString()
+                };
+              } else if (discountType === 'relative') {
+                const discountPercent = this.getNodeParameter('invoiceDiscountPercent', i) as number;
+                discount = {
+                  type: 'relative',
+                  value: discountPercent.toString()
+                };
+              }
+              
+              // Invoice line sections (pour méthodes advanced et dynamic)
+              let invoice_line_sections: any[] | null = null;
+              if (creationMethod === 'advanced' || creationMethod === 'dynamic') {
+                const sectionsRaw = this.getNodeParameter('invoiceLineSections', i) as string;
+                if (sectionsRaw && sectionsRaw.trim() !== '' && sectionsRaw.trim() !== '[]') {
+                  invoice_line_sections = typeof sectionsRaw === 'string' ? JSON.parse(sectionsRaw) : sectionsRaw;
+                }
+              }
               
               if (creationMethod === 'simple') {
                 // Méthode simple : une seule ligne
@@ -3371,7 +3718,11 @@ export class Pennylane implements INodeType {
                 
                 createData = {
                   date,
+                  deadline,
+                  draft,
                   customer_id,
+                  currency,
+                  language,
                   invoice_lines: [{
                     product_id,
                     quantity: quantity.toString(),
@@ -3381,11 +3732,35 @@ export class Pennylane implements INodeType {
                     vat_rate: "FR_200"
                   }]
                 };
+                
+                // Ajouter les champs optionnels s'ils sont fournis
+                if (invoiceTemplateId && invoiceTemplateId > 0) {
+                  (createData as any).customer_invoice_template_id = invoiceTemplateId;
+                }
+                if (pdf_invoice_subject && pdf_invoice_subject.trim() !== '') {
+                  (createData as any).pdf_invoice_subject = pdf_invoice_subject.trim();
+                }
+                if (pdf_description && pdf_description.trim() !== '') {
+                  (createData as any).pdf_description = pdf_description.trim();
+                }
+                if (pdf_invoice_free_text && pdf_invoice_free_text.trim() !== '') {
+                  (createData as any).pdf_invoice_free_text = pdf_invoice_free_text.trim();
+                }
+                if (special_mention && special_mention.trim() !== '') {
+                  (createData as any).special_mention = special_mention.trim();
+                }
+                if (label && label.trim() !== '') {
+                  (createData as any).label = label.trim();
+                }
+                if (external_reference && external_reference.trim() !== '') {
+                  (createData as any).external_reference = external_reference.trim();
+                }
+                if (discount) {
+                  (createData as any).discount = discount;
+                }
               } else if (creationMethod === 'advanced') {
                 // Méthode avancée : lignes multiples via JSON
                 const invoiceLinesRaw = this.getNodeParameter('invoiceLines', i) as string;
-                const globalDiscount = this.getNodeParameter('invoiceGlobalDiscount', i) as number;
-                const globalDiscountPercent = this.getNodeParameter('invoiceGlobalDiscountPercent', i) as number;
                 
                 const invoice_lines = typeof invoiceLinesRaw === 'string' 
                   ? JSON.parse(invoiceLinesRaw) 
@@ -3393,27 +3768,54 @@ export class Pennylane implements INodeType {
                 
                 createData = {
                   date,
+                  deadline,
+                  draft,
                   customer_id,
+                  currency,
+                  language,
                   invoice_lines
                 };
                 
-                // Ajouter remise globale si spécifiée
-                if (globalDiscount > 0) {
-                  (createData as any).global_discount_amount = globalDiscount.toString();
+                // Ajouter les champs optionnels s'ils sont fournis
+                if (invoiceTemplateId && invoiceTemplateId > 0) {
+                  (createData as any).customer_invoice_template_id = invoiceTemplateId;
                 }
-                if (globalDiscountPercent > 0) {
-                  (createData as any).global_discount_percentage = globalDiscountPercent.toString();
+                if (pdf_invoice_subject && pdf_invoice_subject.trim() !== '') {
+                  (createData as any).pdf_invoice_subject = pdf_invoice_subject.trim();
+                }
+                if (pdf_description && pdf_description.trim() !== '') {
+                  (createData as any).pdf_description = pdf_description.trim();
+                }
+                if (pdf_invoice_free_text && pdf_invoice_free_text.trim() !== '') {
+                  (createData as any).pdf_invoice_free_text = pdf_invoice_free_text.trim();
+                }
+                if (special_mention && special_mention.trim() !== '') {
+                  (createData as any).special_mention = special_mention.trim();
+                }
+                if (label && label.trim() !== '') {
+                  (createData as any).label = label.trim();
+                }
+                if (external_reference && external_reference.trim() !== '') {
+                  (createData as any).external_reference = external_reference.trim();
+                }
+                
+                // Ajouter discount structuré si spécifié
+                if (discount) {
+                  (createData as any).discount = discount;
+                }
+                
+                // Ajouter invoice_line_sections si spécifié
+                if (invoice_line_sections) {
+                  (createData as any).invoice_line_sections = invoice_line_sections;
                 }
               } else if (creationMethod === 'dynamic') {
                 // Méthode dynamique : fixedCollection avec boutons Add/Remove
                 const invoiceLinesDynamic = this.getNodeParameter('invoiceLinesDynamic', i) as any;
-                const globalDiscount = this.getNodeParameter('invoiceGlobalDiscount', i) as number;
-                const globalDiscountPercent = this.getNodeParameter('invoiceGlobalDiscountPercent', i) as number;
                 
                 const linesArray = invoiceLinesDynamic.lines || [];
                 
                 const invoice_lines = linesArray.map((lineData: any) => {
-                  const line = {
+                  const line: any = {
                     product_id: lineData.product_id,
                     quantity: lineData.quantity.toString(),
                     raw_currency_unit_price: lineData.raw_currency_unit_price.toString(),
@@ -3423,12 +3825,32 @@ export class Pennylane implements INodeType {
                   
                   // Ajouter label si fourni
                   if (lineData.label && lineData.label.trim() !== '') {
-                    (line as any).label = lineData.label.trim();
+                    line.label = lineData.label.trim();
                   }
                   
                   // Ajouter discount si fourni
                   if (lineData.discount_amount && lineData.discount_amount > 0) {
-                    (line as any).discount_amount = lineData.discount_amount.toString();
+                    line.discount_amount = lineData.discount_amount.toString();
+                  }
+                  
+                  // Ajouter description si fournie
+                  if (lineData.description && lineData.description.trim() !== '') {
+                    line.description = lineData.description.trim();
+                  }
+                  
+                  // Ajouter substance si fourni
+                  if (lineData.substance && lineData.substance.trim() !== '') {
+                    line.substance = lineData.substance;
+                  }
+                  
+                  // Ajouter ledger_account_id si fourni
+                  if (lineData.ledger_account_id && lineData.ledger_account_id > 0) {
+                    line.ledger_account_id = lineData.ledger_account_id;
+                  }
+                  
+                  // Ajouter section_rank si fourni
+                  if (lineData.section_rank && lineData.section_rank > 0) {
+                    line.section_rank = lineData.section_rank;
                   }
                   
                   return line;
@@ -3436,16 +3858,45 @@ export class Pennylane implements INodeType {
                 
                 createData = {
                   date,
+                  deadline,
+                  draft,
                   customer_id,
+                  currency,
+                  language,
                   invoice_lines
                 };
                 
-                // Ajouter remise globale si spécifiée
-                if (globalDiscount > 0) {
-                  (createData as any).global_discount_amount = globalDiscount.toString();
+                // Ajouter les champs optionnels s'ils sont fournis
+                if (invoiceTemplateId && invoiceTemplateId > 0) {
+                  (createData as any).customer_invoice_template_id = invoiceTemplateId;
                 }
-                if (globalDiscountPercent > 0) {
-                  (createData as any).global_discount_percentage = globalDiscountPercent.toString();
+                if (pdf_invoice_subject && pdf_invoice_subject.trim() !== '') {
+                  (createData as any).pdf_invoice_subject = pdf_invoice_subject.trim();
+                }
+                if (pdf_description && pdf_description.trim() !== '') {
+                  (createData as any).pdf_description = pdf_description.trim();
+                }
+                if (pdf_invoice_free_text && pdf_invoice_free_text.trim() !== '') {
+                  (createData as any).pdf_invoice_free_text = pdf_invoice_free_text.trim();
+                }
+                if (special_mention && special_mention.trim() !== '') {
+                  (createData as any).special_mention = special_mention.trim();
+                }
+                if (label && label.trim() !== '') {
+                  (createData as any).label = label.trim();
+                }
+                if (external_reference && external_reference.trim() !== '') {
+                  (createData as any).external_reference = external_reference.trim();
+                }
+                
+                // Ajouter discount structuré si spécifié
+                if (discount) {
+                  (createData as any).discount = discount;
+                }
+                
+                // Ajouter invoice_line_sections si spécifié
+                if (invoice_line_sections) {
+                  (createData as any).invoice_line_sections = invoice_line_sections;
                 }
               } else if (creationMethod === 'json') {
                 // Méthode JSON complète : utiliser directement le JSON fourni
@@ -3454,10 +3905,14 @@ export class Pennylane implements INodeType {
                   ? JSON.parse(completeJsonRaw) 
                   : completeJsonRaw;
                 
-                // Remplacer date et customer_id par les valeurs du formulaire si nécessaire
+                // Remplacer les valeurs du formulaire si nécessaire (les valeurs du JSON prennent le dessus si déjà présentes)
                 createData = {
+                  currency,
+                  language,
                   ...completeData,
                   date,
+                  deadline,
+                  draft,
                   customer_id
                 };
               }
