@@ -70,6 +70,7 @@ export class Pennylane implements INodeType {
           // 📋 INVOICE DETAILS
           { name: '📋 Invoice Lines', value: 'invoiceLines' },
           { name: '📎 Invoice Appendices', value: 'invoiceAppendices' },
+          { name: '📝 Customer Invoice Template', value: 'customerInvoiceTemplate' },
           
           // 📎 FILES & OTHER
           { name: '📎 File Attachment', value: 'fileAttachment' },
@@ -86,7 +87,7 @@ export class Pennylane implements INodeType {
         type: 'options',
         displayOptions: {
           show: { 
-            resource: ['customer', 'supplier', 'category', 'customerInvoice']
+            resource: ['customer', 'supplier', 'category']
           },
         },
         options: [
@@ -97,7 +98,58 @@ export class Pennylane implements INodeType {
           { name: 'Delete', value: 'delete' },
         ],
         default: 'getAll',
-        description: 'Full CRUD support (DELETE for Customer Invoice drafts only)',
+        description: 'Full CRUD support',
+      },
+      
+      // Operations pour Customer Invoice (avec opérations spéciales pour sous-ressources)
+      {
+        displayName: 'Operation',
+        name: 'operation',
+        type: 'options',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice']
+          },
+        },
+        options: [
+          { name: 'Get All', value: 'getAll' },
+          { name: 'Get', value: 'get' },
+          { name: 'Create', value: 'create' },
+          { name: 'Update', value: 'update' },
+          { name: 'Delete', value: 'delete' },
+          { name: 'Get Invoice Lines', value: 'getInvoiceLines' },
+          { name: 'Get Invoice Line Sections', value: 'getInvoiceLineSections' },
+          { name: 'Get Payments', value: 'getPayments' },
+          { name: 'Get Matched Transactions', value: 'getMatchedTransactions' },
+          { name: 'Get Appendices', value: 'getAppendices' },
+          { name: 'Upload Appendix', value: 'uploadAppendix' },
+          { name: 'Get Categories', value: 'getCategories' },
+          { name: 'Categorize Invoice', value: 'categorizeInvoice' },
+          { name: 'Send by Email', value: 'sendByEmail' },
+          { name: 'Get Custom Header Fields', value: 'getCustomHeaderFields' },
+        ],
+        default: 'getAll',
+        description: 'Customer Invoice operations including sub-resources (DELETE for drafts only)',
+      },
+      
+      // Operations pour les ressources avec CREATE+UPDATE support
+      {
+        displayName: 'Operation',
+        name: 'operation',
+        type: 'options',
+        displayOptions: {
+          show: { 
+            resource: ['product']
+          },
+        },
+        options: [
+          { name: 'Get All', value: 'getAll' },
+          { name: 'Get', value: 'get' },
+          { name: 'Create', value: 'create' },
+          { name: 'Update', value: 'update' },
+        ],
+        default: 'getAll',
+        description: 'Full CRUD support except DELETE',
       },
       
       // Operations pour les ressources avec CREATE seulement
@@ -107,7 +159,7 @@ export class Pennylane implements INodeType {
         type: 'options',
         displayOptions: {
           show: { 
-            resource: ['journal', 'ledgerAccount', 'product', 'ledgerEntry']
+            resource: ['journal', 'ledgerAccount', 'ledgerEntry']
           },
         },
         options: [
@@ -174,6 +226,37 @@ export class Pennylane implements INodeType {
         description: 'Generate report (these endpoints provide reports, not individual records)',
       },
       
+      // Operations pour Supplier Invoice (read + write operations)
+      {
+        displayName: 'Operation',
+        name: 'operation',
+        type: 'options',
+        displayOptions: {
+          show: { 
+            resource: ['supplierInvoice']
+          },
+        },
+        options: [
+          // Read operations
+          { name: 'Get All', value: 'getAll' },
+          { name: 'Get', value: 'get' },
+          { name: 'Get Invoice Lines', value: 'getInvoiceLines' },
+          { name: 'Get Categories', value: 'getCategories' },
+          { name: 'Get Payments', value: 'getPayments' },
+          { name: 'Get Matched Transactions', value: 'getMatchedTransactions' },
+          // Write operations
+          { name: 'Import Invoice', value: 'importInvoice' },
+          { name: 'Update Invoice', value: 'update' },
+          { name: 'Categorize Invoice', value: 'categorizeInvoice' },
+          { name: 'Update Payment Status', value: 'updatePaymentStatus' },
+          { name: 'Validate Accounting', value: 'validateAccounting' },
+          { name: 'Link Purchase Request', value: 'linkPurchaseRequest' },
+          { name: 'Update E-Invoice Status', value: 'updateEInvoiceStatus' },
+        ],
+        default: 'getAll',
+        description: 'Supplier invoice operations (read & write)',
+      },
+      
       // Operations pour TOUTES les autres ressources (lecture seule)
       {
         displayName: 'Operation',
@@ -182,10 +265,11 @@ export class Pennylane implements INodeType {
         displayOptions: {
           show: { 
             resource: [
-              'quote', 'commercialDocument', 'supplierInvoice', 
+              'quote', 'commercialDocument', 
               'ledgerEntryLine', 'ledgerAttachment', 'categoryGroup', 
               'transaction', 'bankAccount', 'payment', 'invoiceLines', 'invoiceAppendices',
-              'billingSubscription', 'goCardlessMandate', 'fileAttachment', 'userProfile'
+              'billingSubscription', 'goCardlessMandate', 'fileAttachment', 'userProfile',
+              'customerInvoiceTemplate'
             ]
           },
         },
@@ -702,7 +786,7 @@ export class Pennylane implements INodeType {
         displayOptions: {
           show: { 
             resource: ['customer'],
-            operation: ['create']
+            operation: ['create', 'update', 'get']
           },
         },
         options: [
@@ -716,33 +800,32 @@ export class Pennylane implements INodeType {
       
       // === CHAMPS COMMUNS ===
       {
-        displayName: 'Customer Name',
+        displayName: 'Company Name',
         name: 'customerName',
         type: 'string',
         displayOptions: {
           show: { 
             resource: ['customer'],
-            operation: ['create']
+            operation: ['create', 'update'],
+            customerType: ['company']
           },
         },
         default: '',
-        description: 'Customer name (company name or individual full name)',
-        required: true,
-        placeholder: 'Enter customer name...',
+        description: 'Company name (required for CREATE, optional for UPDATE)',
+        placeholder: 'Acme Corporation',
       },
       {
-        displayName: 'Customer Email',
+        displayName: 'Customer Email (Optional)',
         name: 'customerEmail',
         type: 'string',
         displayOptions: {
           show: { 
             resource: ['customer'],
-            operation: ['create']
+            operation: ['create', 'update']
           },
         },
         default: '',
-        description: 'Customer email address',
-        required: true,
+        description: 'Customer email address (optional)',
         placeholder: 'customer@example.com',
         typeOptions: {
           validation: [
@@ -763,7 +846,7 @@ export class Pennylane implements INodeType {
         displayOptions: {
           show: { 
             resource: ['customer'],
-            operation: ['create']
+            operation: ['create', 'update']
           },
         },
         default: '',
@@ -771,18 +854,60 @@ export class Pennylane implements INodeType {
         placeholder: '+33 1 23 45 67 89',
       },
       {
-        displayName: 'Customer Address (Optional)',
+        displayName: 'Customer Address',
         name: 'customerAddress',
         type: 'string',
         displayOptions: {
           show: { 
             resource: ['customer'],
-            operation: ['create']
+            operation: ['create', 'update']
           },
         },
         default: '',
-        description: 'Customer address (optional)',
-        placeholder: '123 Rue de la Paix, 75001 Paris',
+        description: 'Customer street address (required for CREATE, optional for UPDATE)',
+        placeholder: '123 Rue de la Paix',
+      },
+      {
+        displayName: 'Customer Postal Code',
+        name: 'customerPostalCode',
+        type: 'string',
+        displayOptions: {
+          show: { 
+            resource: ['customer'],
+            operation: ['create', 'update']
+          },
+        },
+        default: '',
+        description: 'Customer postal code (required for CREATE, optional for UPDATE)',
+        placeholder: '75001',
+      },
+      {
+        displayName: 'Customer City',
+        name: 'customerCity',
+        type: 'string',
+        displayOptions: {
+          show: { 
+            resource: ['customer'],
+            operation: ['create', 'update']
+          },
+        },
+        default: '',
+        description: 'Customer city (required for CREATE, optional for UPDATE)',
+        placeholder: 'Paris',
+      },
+      {
+        displayName: 'Customer Country Code',
+        name: 'customerCountry',
+        type: 'string',
+        displayOptions: {
+          show: { 
+            resource: ['customer'],
+            operation: ['create', 'update']
+          },
+        },
+        default: 'FR',
+        description: 'Customer country (ISO Alpha-2 code, e.g., FR, BE, CH)',
+        placeholder: 'FR',
       },
       
       // === CHAMPS SPÉCIFIQUES COMPANY ===
@@ -793,7 +918,7 @@ export class Pennylane implements INodeType {
         displayOptions: {
           show: { 
             resource: ['customer'],
-            operation: ['create'],
+            operation: ['create', 'update'],
             customerType: ['company']
           },
         },
@@ -808,7 +933,7 @@ export class Pennylane implements INodeType {
         displayOptions: {
           show: { 
             resource: ['customer'],
-            operation: ['create'],
+            operation: ['create', 'update'],
             customerType: ['company']
           },
         },
@@ -819,33 +944,33 @@ export class Pennylane implements INodeType {
       
       // === CHAMPS SPÉCIFIQUES INDIVIDUAL ===
       {
-        displayName: 'Individual First Name (Optional)',
+        displayName: 'Individual First Name',
         name: 'customerFirstName',
         type: 'string',
         displayOptions: {
           show: { 
             resource: ['customer'],
-            operation: ['create'],
+            operation: ['create', 'update'],
             customerType: ['individual']
           },
         },
         default: '',
-        description: 'Individual first name (optional if full name already in Customer Name)',
+        description: 'Individual first name (required for CREATE, optional for UPDATE)',
         placeholder: 'Jean',
       },
       {
-        displayName: 'Individual Last Name (Optional)',
+        displayName: 'Individual Last Name',
         name: 'customerLastName',
         type: 'string',
         displayOptions: {
           show: { 
             resource: ['customer'],
-            operation: ['create'],
+            operation: ['create', 'update'],
             customerType: ['individual']
           },
         },
         default: '',
-        description: 'Individual last name (optional if full name already in Customer Name)',
+        description: 'Individual last name (required for CREATE, optional for UPDATE)',
         placeholder: 'Dupont',
       },
       
@@ -950,12 +1075,12 @@ export class Pennylane implements INodeType {
         displayOptions: {
           show: { 
             resource: ['product'],
-            operation: ['create']
+            operation: ['create', 'update']
           },
         },
         default: '',
-        description: 'Product name/label',
-        required: true,
+        description: 'Product name/label (required for CREATE, optional for UPDATE)',
+        required: false,
       },
       {
         displayName: 'Product Unit',
@@ -964,7 +1089,7 @@ export class Pennylane implements INodeType {
         displayOptions: {
           show: { 
             resource: ['product'],
-            operation: ['create']
+            operation: ['create', 'update']
           },
         },
         options: [
@@ -992,7 +1117,7 @@ export class Pennylane implements INodeType {
         displayOptions: {
           show: { 
             resource: ['product'],
-            operation: ['create'],
+            operation: ['create', 'update'],
             productUnit: ['custom']
           },
         },
@@ -1007,7 +1132,7 @@ export class Pennylane implements INodeType {
         displayOptions: {
           show: { 
             resource: ['product'],
-            operation: ['create']
+            operation: ['create', 'update']
           },
         },
         options: [
@@ -1025,7 +1150,7 @@ export class Pennylane implements INodeType {
         displayOptions: {
           show: { 
             resource: ['product'],
-            operation: ['create'],
+            operation: ['create', 'update'],
             priceInputMethod: ['euros']
           },
         },
@@ -1045,7 +1170,7 @@ export class Pennylane implements INodeType {
         displayOptions: {
           show: { 
             resource: ['product'],
-            operation: ['create'],
+            operation: ['create', 'update'],
             priceInputMethod: ['cents']
           },
         },
@@ -1063,7 +1188,7 @@ export class Pennylane implements INodeType {
         displayOptions: {
           show: { 
             resource: ['product'],
-            operation: ['create']
+            operation: ['create', 'update']
           },
         },
         options: [
@@ -1161,7 +1286,7 @@ export class Pennylane implements INodeType {
         displayOptions: {
           show: { 
             resource: ['product'],
-            operation: ['create']
+            operation: ['create', 'update']
           },
         },
         options: [
@@ -1172,8 +1297,8 @@ export class Pennylane implements INodeType {
           { name: '0% (FR_0)', value: 'FR_0' },
         ],
         default: 'FR_200',
-        description: 'VAT rate code',
-        required: true,
+        description: 'VAT rate code (required for CREATE, optional for UPDATE)',
+        required: false,
       },
       
       // Champs spécialisés pour Customer Invoice
@@ -1689,6 +1814,164 @@ export class Pennylane implements INodeType {
         required: true,
       },
       
+      // === SUPPLIER INVOICE RESOURCE PARAMETERS ===
+      {
+        displayName: 'Supplier Invoice',
+        name: 'subResourceSupplierInvoiceId',
+        type: 'options',
+        typeOptions: {
+          loadOptionsMethod: 'getSupplierInvoices',
+        },
+        displayOptions: {
+          show: { 
+            resource: ['supplierInvoice'],
+            operation: ['get', 'getInvoiceLines', 'getCategories', 'getPayments', 'getMatchedTransactions', 
+                       'update', 'categorizeInvoice', 'updatePaymentStatus', 'validateAccounting', 
+                       'linkPurchaseRequest', 'updateEInvoiceStatus']
+          },
+        },
+        default: '',
+        description: 'Select supplier invoice',
+        required: true,
+      },
+      
+      // Import Invoice fields
+      {
+        displayName: 'Invoice Data (JSON)',
+        name: 'importInvoiceData',
+        type: 'json',
+        displayOptions: {
+          show: { 
+            resource: ['supplierInvoice'],
+            operation: ['importInvoice']
+          },
+        },
+        default: '{\n  "label": "Invoice Label",\n  "invoice_number": "INV-2024-001",\n  "currency": "EUR",\n  "amount": "100.00",\n  "currency_amount_before_tax": "83.33",\n  "date": "2024-01-15",\n  "deadline": "2024-02-15",\n  "supplier": {"source_id": "supplier_123"},\n  "invoice_lines": [{\n    "label": "Service",\n    "quantity": 1,\n    "unit": "unit",\n    "vat_rate": "FR_200",\n    "currency_price_before_tax": "83.33",\n    "currency_amount": "100.00"\n  }]\n}',
+        description: 'Invoice data as JSON (see Pennylane API docs for full structure)',
+        required: true,
+      },
+      
+      // Update Invoice fields
+      {
+        displayName: 'Update Data (JSON)',
+        name: 'updateInvoiceData',
+        type: 'json',
+        displayOptions: {
+          show: { 
+            resource: ['supplierInvoice'],
+            operation: ['update']
+          },
+        },
+        default: '{\n  "label": "Updated Label",\n  "invoice_number": "INV-2024-001-UPDATED"\n}',
+        description: 'Fields to update (all optional): label, invoice_number, currency, amount, currency_amount_before_tax, date, deadline, etc.',
+        required: false,
+      },
+      
+      // Categorize Invoice fields
+      {
+        displayName: 'Categories (JSON)',
+        name: 'categoriesData',
+        type: 'json',
+        displayOptions: {
+          show: { 
+            resource: ['supplierInvoice'],
+            operation: ['categorizeInvoice']
+          },
+        },
+        default: '[{"id": 1234, "weight": 1.0}]',
+        description: 'Array of category objects with id and weight (e.g., [{"id": 1234, "weight": 1.0}])',
+        required: true,
+      },
+      
+      // Payment Status fields
+      {
+        displayName: 'Payment Status',
+        name: 'paymentStatus',
+        type: 'options',
+        displayOptions: {
+          show: { 
+            resource: ['supplierInvoice'],
+            operation: ['updatePaymentStatus']
+          },
+        },
+        options: [
+          { name: 'Paid', value: 'paid' },
+          { name: 'To Be Paid', value: 'to_be_paid' },
+        ],
+        default: 'paid',
+        description: 'Payment status to set',
+        required: true,
+      },
+      
+      // Link Purchase Request fields
+      {
+        displayName: 'Purchase Request ID',
+        name: 'purchaseRequestId',
+        type: 'string',
+        displayOptions: {
+          show: { 
+            resource: ['supplierInvoice'],
+            operation: ['linkPurchaseRequest']
+          },
+        },
+        default: '',
+        description: 'ID of the purchase request to link',
+        required: true,
+      },
+      
+      // E-Invoice Status fields
+      {
+        displayName: 'E-Invoice Status',
+        name: 'eInvoiceStatus',
+        type: 'options',
+        displayOptions: {
+          show: { 
+            resource: ['supplierInvoice'],
+            operation: ['updateEInvoiceStatus']
+          },
+        },
+        options: [
+          { name: 'Disputed', value: 'disputed' },
+          { name: 'Refused', value: 'refused' },
+          { name: 'Undisputed', value: 'undisputed' },
+        ],
+        default: 'disputed',
+        description: 'E-invoice status to set',
+        required: true,
+      },
+      {
+        displayName: 'Reason',
+        name: 'eInvoiceReason',
+        type: 'options',
+        displayOptions: {
+          show: { 
+            resource: ['supplierInvoice'],
+            operation: ['updateEInvoiceStatus'],
+            eInvoiceStatus: ['disputed', 'refused']
+          },
+        },
+        options: [
+          { name: 'Incorrect VAT Rate', value: 'incorrect_vat_rate' },
+          { name: 'Incorrect Unit Prices', value: 'incorrect_unit_prices' },
+          { name: 'Incorrect Billed Quantity', value: 'incorrect_billed_quantity' },
+          { name: 'Incorrect Billed Item', value: 'incorrect_billed_item' },
+          { name: 'Defective Delivered Item', value: 'defective_delivered_item' },
+          { name: 'Delivery Issue', value: 'delivery_issue' },
+          { name: 'Bank Details Error', value: 'bank_details_error' },
+          { name: 'Incorrect Payment Terms', value: 'incorrect_payment_terms' },
+          { name: 'Missing Legal Notice', value: 'missing_legal_notice' },
+          { name: 'Missing Contractual Reference', value: 'missing_contractual_reference' },
+          { name: 'Recipient Error', value: 'recipient_error' },
+          { name: 'Contract Completed', value: 'contract_completed' },
+          { name: 'Duplicate Invoice', value: 'duplicate_invoice' },
+          { name: 'Incorrect Prices', value: 'incorrect_prices' },
+          { name: 'Non Compliant Invoice', value: 'non_compliant_invoice' },
+        ],
+        default: 'incorrect_vat_rate',
+        description: 'Reason for dispute or refusal',
+        required: false,
+      },
+      
       // Champs spécialisés pour SEPA Mandate
       {
         displayName: 'Mandate Customer',
@@ -1827,6 +2110,78 @@ export class Pennylane implements INodeType {
         description: 'Enter the invoice ID manually',
         required: true,
       },
+      
+      // === CHAMPS POUR SUB-RESOURCE OPERATIONS ===
+      
+      // Invoice ID pour les opérations de sous-ressources
+      {
+        displayName: 'Customer Invoice',
+        name: 'subResourceInvoiceId',
+        type: 'options',
+        typeOptions: {
+          loadOptionsMethod: 'getCustomerInvoices',
+        },
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['getInvoiceLines', 'getInvoiceLineSections', 'getPayments', 'getMatchedTransactions', 'getAppendices', 'uploadAppendix', 'getCategories', 'categorizeInvoice', 'sendByEmail', 'getCustomHeaderFields']
+          },
+        },
+        default: '',
+        description: 'Select the customer invoice',
+        required: true,
+      },
+      
+      // Champs pour Upload Appendix
+      {
+        displayName: 'File',
+        name: 'appendixFile',
+        type: 'string',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['uploadAppendix']
+          },
+        },
+        default: '',
+        description: 'File to upload (use Binary Data input). Supported: PDF, PNG, JPEG, TIFF, BMP, GIF',
+        placeholder: 'data:@binary',
+        required: true,
+      },
+      
+      // Champs pour Categorize Invoice
+      {
+        displayName: 'Categories (JSON)',
+        name: 'invoiceCategories',
+        type: 'json',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['categorizeInvoice']
+          },
+        },
+        default: '[]',
+        description: 'Array of category assignments. Example: [{"category_id": 1, "weight": "0.5"}]',
+        placeholder: '[{"category_id": 123, "weight": "1.0"}]',
+        required: true,
+      },
+      
+      // Champs pour Send by Email
+      {
+        displayName: 'Recipients (Optional)',
+        name: 'emailRecipients',
+        type: 'json',
+        displayOptions: {
+          show: { 
+            resource: ['customerInvoice'],
+            operation: ['sendByEmail']
+          },
+        },
+        default: '[]',
+        description: 'Array of email addresses to send to. If empty, sends to invoice customer. Example: ["customer@example.com", "admin@example.com"]',
+        placeholder: '["customer@example.com"]',
+      },
+      
       // Mode de sélection Journal
       {
         displayName: 'Journal Selection Mode',
@@ -2391,6 +2746,9 @@ export class Pennylane implements INodeType {
       // BILLING SUBSCRIPTIONS
       billingSubscription: 'billing_subscriptions',
       
+      // INVOICE TEMPLATES
+      customerInvoiceTemplate: 'customer_invoice_templates',
+      
       // CHANGELOGS
       
       // MANDATES
@@ -2714,13 +3072,24 @@ export class Pennylane implements INodeType {
               // Gestion normale avec ID
               let getId: string;
         if (resource === 'customer') {
+                // For GET, we need to determine customer type and use appropriate endpoint
+                const customerType = this.getNodeParameter('customerType', i) as string;
                 getId = this.getNodeParameter('customerId', i) as string;
+                
+                if (customerType === 'company') {
+                  responseData = await pennylaneApiRequest.call(this, 'GET', `/company_customers/${getId}`);
+                } else {
+                  responseData = await pennylaneApiRequest.call(this, 'GET', `/individual_customers/${getId}`);
+                }
+                break;
               } else if (resource === 'supplier') {
                 getId = this.getNodeParameter('supplierId', i) as string;
               } else if (resource === 'product') {
                 getId = this.getNodeParameter('productId', i) as string;
               } else if (resource === 'customerInvoice') {
                 getId = this.getNodeParameter('customerInvoiceId', i) as string;
+              } else if (resource === 'supplierInvoice') {
+                getId = this.getNodeParameter('subResourceSupplierInvoiceId', i) as string;
               } else if (resource === 'journal') {
                 getId = this.getNodeParameter('journalId', i) as string;
               } else if (resource === 'ledgerAccount') {
@@ -2737,53 +3106,191 @@ export class Pennylane implements INodeType {
             }
             break;
 
+          // === NEW CUSTOMER INVOICE SUB-RESOURCE OPERATIONS ===
+          
+          case 'getInvoiceLines':
+            const invoiceLinesId = this.getNodeParameter('subResourceInvoiceId', i) as string;
+            responseData = await pennylaneApiRequest.call(this, 'GET', `/customer_invoices/${invoiceLinesId}/invoice_lines`);
+            break;
+            
+          case 'getInvoiceLineSections':
+            const sectionsId = this.getNodeParameter('subResourceInvoiceId', i) as string;
+            responseData = await pennylaneApiRequest.call(this, 'GET', `/customer_invoices/${sectionsId}/invoice_line_sections`);
+            break;
+            
+          case 'getPayments':
+            const paymentsId = this.getNodeParameter('subResourceInvoiceId', i) as string;
+            responseData = await pennylaneApiRequest.call(this, 'GET', `/customer_invoices/${paymentsId}/payments`);
+            break;
+            
+          case 'getMatchedTransactions':
+            const transactionsId = this.getNodeParameter('subResourceInvoiceId', i) as string;
+            responseData = await pennylaneApiRequest.call(this, 'GET', `/customer_invoices/${transactionsId}/matched_transactions`);
+            break;
+            
+          case 'getAppendices':
+            const appendicesId = this.getNodeParameter('subResourceInvoiceId', i) as string;
+            responseData = await pennylaneApiRequest.call(this, 'GET', `/customer_invoices/${appendicesId}/appendices`);
+            break;
+            
+          case 'getCategories':
+            const categoriesId = this.getNodeParameter('subResourceInvoiceId', i) as string;
+            responseData = await pennylaneApiRequest.call(this, 'GET', `/customer_invoices/${categoriesId}/categories`);
+            break;
+            
+          case 'getCustomHeaderFields':
+            const headerFieldsId = this.getNodeParameter('subResourceInvoiceId', i) as string;
+            responseData = await pennylaneApiRequest.call(this, 'GET', `/customer_invoices/${headerFieldsId}/custom_header_fields`);
+            break;
+          
+          case 'uploadAppendix':
+            const uploadInvoiceId = this.getNodeParameter('subResourceInvoiceId', i) as string;
+            const fileData = this.getNodeParameter('appendixFile', i) as string;
+            
+            // TODO: Implement file upload with multipart/form-data
+            // For now, throw error indicating implementation needed
+            throw new Error(`Upload Appendix operation for invoice ${uploadInvoiceId} requires binary data input (file: ${fileData ? 'provided' : 'missing'}). Please implement file upload handling with multipart/form-data.`);
+            // Expected implementation:
+            // const formData = { file: fileData };
+            // responseData = await pennylaneApiRequest.call(this, 'POST', `/customer_invoices/${uploadInvoiceId}/appendices`, formData, { 'Content-Type': 'multipart/form-data' });
+            break;
+            
+          case 'categorizeInvoice':
+            const categorizeId = this.getNodeParameter('subResourceInvoiceId', i) as string;
+            const categoriesDataRaw = this.getNodeParameter('invoiceCategories', i) as string;
+            const categoriesData = typeof categoriesDataRaw === 'string' ? JSON.parse(categoriesDataRaw) : categoriesDataRaw;
+            
+            responseData = await pennylaneApiRequest.call(this, 'PUT', `/customer_invoices/${categorizeId}/categories`, { categories: categoriesData });
+            break;
+            
+          case 'sendByEmail':
+            const sendEmailId = this.getNodeParameter('subResourceInvoiceId', i) as string;
+            const recipientsRaw = this.getNodeParameter('emailRecipients', i) as string;
+            const recipients = recipientsRaw && recipientsRaw.trim() !== '' && recipientsRaw !== '[]' 
+              ? (typeof recipientsRaw === 'string' ? JSON.parse(recipientsRaw) : recipientsRaw)
+              : undefined;
+            
+            const emailBody = recipients ? { recipients } : {};
+            responseData = await pennylaneApiRequest.call(this, 'POST', `/customer_invoices/${sendEmailId}/send_by_email`, emailBody);
+            break;
+          
+          // === SUPPLIER INVOICE SUB-RESOURCE OPERATIONS ===
+          
+          case 'getInvoiceLines':
+            if (resource === 'supplierInvoice') {
+              const invoiceId = this.getNodeParameter('subResourceSupplierInvoiceId', i) as string;
+              responseData = await pennylaneApiRequest.call(this, 'GET', `/supplier_invoices/${invoiceId}/invoice_lines`);
+            }
+            break;
+            
+          case 'getCategories':
+            if (resource === 'supplierInvoice') {
+              const invoiceId = this.getNodeParameter('subResourceSupplierInvoiceId', i) as string;
+              responseData = await pennylaneApiRequest.call(this, 'GET', `/supplier_invoices/${invoiceId}/categories`);
+            }
+            break;
+            
+          case 'getPayments':
+            if (resource === 'supplierInvoice') {
+              const invoiceId = this.getNodeParameter('subResourceSupplierInvoiceId', i) as string;
+              responseData = await pennylaneApiRequest.call(this, 'GET', `/supplier_invoices/${invoiceId}/payments`);
+            }
+            break;
+            
+          case 'getMatchedTransactions':
+            if (resource === 'supplierInvoice') {
+              const invoiceId = this.getNodeParameter('subResourceSupplierInvoiceId', i) as string;
+              responseData = await pennylaneApiRequest.call(this, 'GET', `/supplier_invoices/${invoiceId}/matched_transactions`);
+            }
+            break;
+
           case 'create':
             let createData: object = {};
             
             if (resource === 'customer') {
               const customerType = this.getNodeParameter('customerType', i) as string;
-              const name = this.getNodeParameter('customerName', i) as string;
               const email = this.getNodeParameter('customerEmail', i) as string;
               const phone = this.getNodeParameter('customerPhone', i) as string;
               const address = this.getNodeParameter('customerAddress', i) as string;
+              const postalCode = this.getNodeParameter('customerPostalCode', i) as string;
+              const city = this.getNodeParameter('customerCity', i) as string;
+              const country = this.getNodeParameter('customerCountry', i) as string;
               
-              // Données de base
-              createData = { name, email };
+              // Validate required fields for CREATE
+              if (!address || !postalCode || !city || !country) {
+                throw new Error('Address, postal code, city and country are required for creating a customer');
+              }
               
-              // Ajouter les champs optionnels communs
-              if (phone && phone.trim() !== '') {
-                (createData as any).phone = phone.trim();
-              }
-              if (address && address.trim() !== '') {
-                (createData as any).address = address.trim();
-              }
+              // billing_address is REQUIRED by Pennylane API
+              const billingAddress = {
+                address: address.trim(),
+                postal_code: postalCode.trim(),
+                city: city.trim(),
+                country_alpha2: country.trim().toUpperCase()
+              };
               
               // Champs spécifiques selon le type
               if (customerType === 'company') {
+                const name = this.getNodeParameter('customerName', i) as string;
+                
+                // Validate required fields for company
+                if (!name) {
+                  throw new Error('Company name is required for creating a company customer');
+                }
+                
+                // For company: name + billing_address required
+                createData = { 
+                  name: name.trim(),
+                  billing_address: billingAddress
+                };
+                
+                // Optional fields
+                if (email && email.trim() !== '') {
+                  (createData as any).emails = [email.trim()];
+                }
+                if (phone && phone.trim() !== '') {
+                  (createData as any).phone = phone.trim();
+                }
+                
                 const siret = this.getNodeParameter('customerSiret', i) as string;
                 const vatNumber = this.getNodeParameter('customerVatNumber', i) as string;
                 
                 if (siret && siret.trim() !== '') {
-                  (createData as any).siret = siret.trim();
+                  (createData as any).reg_no = siret.trim();
                 }
                 if (vatNumber && vatNumber.trim() !== '') {
                   (createData as any).vat_number = vatNumber.trim();
                 }
-              } else if (customerType === 'individual') {
+                
+                // Use company-specific endpoint
+                responseData = await pennylaneApiRequest.call(this, 'POST', '/company_customers', createData);
+              } else {
+                // For individual: first_name + last_name + billing_address required
                 const firstName = this.getNodeParameter('customerFirstName', i) as string;
                 const lastName = this.getNodeParameter('customerLastName', i) as string;
                 
-                if (firstName && firstName.trim() !== '') {
-                  (createData as any).first_name = firstName.trim();
+                // Validate required fields for individual
+                if (!firstName || !lastName) {
+                  throw new Error('First name and last name are required for creating an individual customer');
                 }
-                if (lastName && lastName.trim() !== '') {
-                  (createData as any).last_name = lastName.trim();
+                
+                createData = { 
+                  first_name: firstName.trim(),
+                  last_name: lastName.trim(),
+                  billing_address: billingAddress
+                };
+                
+                // Optional fields
+                if (email && email.trim() !== '') {
+                  (createData as any).emails = [email.trim()];
                 }
+                if (phone && phone.trim() !== '') {
+                  (createData as any).phone = phone.trim();
+                }
+                
+                // Use individual-specific endpoint
+                responseData = await pennylaneApiRequest.call(this, 'POST', '/individual_customers', createData);
               }
-              
-              // Utiliser l'endpoint approprié selon le type
-              const customerEndpoint = customerType === 'company' ? '/customers/companies' : '/customers/individuals';
-              responseData = await pennylaneApiRequest.call(this, 'POST', customerEndpoint, createData);
               break;
             } else if (resource === 'supplier') {
               const name = this.getNodeParameter('supplierName', i) as string;
@@ -2978,6 +3485,8 @@ export class Pennylane implements INodeType {
               updateId = this.getNodeParameter('productId', i) as string;
             } else if (resource === 'customerInvoice') {
               updateId = this.getNodeParameter('customerInvoiceId', i) as string;
+            } else if (resource === 'supplierInvoice') {
+              updateId = this.getNodeParameter('subResourceSupplierInvoiceId', i) as string;
             } else if (resource === 'category') {
               updateId = this.getNodeParameter('categoryId', i) as string;
             // NOTE: sepaMandate removed from UPDATE due to HTML response issue
@@ -2988,9 +3497,69 @@ export class Pennylane implements INodeType {
             let updateData: object = {};
             
             if (resource === 'customer') {
-              const name = this.getNodeParameter('customerName', i) as string;
+              // For UPDATE, we need to determine customer type and use appropriate endpoint
+              const customerType = this.getNodeParameter('customerType', i) as string;
+              updateData = {};
+              
+              // Common optional fields
               const email = this.getNodeParameter('customerEmail', i) as string;
-              updateData = { name, email };
+              const phone = this.getNodeParameter('customerPhone', i) as string;
+              const address = this.getNodeParameter('customerAddress', i) as string;
+              const postalCode = this.getNodeParameter('customerPostalCode', i) as string;
+              const city = this.getNodeParameter('customerCity', i) as string;
+              const country = this.getNodeParameter('customerCountry', i) as string;
+              
+              if (email && email.trim() !== '') {
+                (updateData as any).emails = [email.trim()];
+              }
+              if (phone && phone.trim() !== '') {
+                (updateData as any).phone = phone.trim();
+              }
+              
+              // billing_address (optional, but if provided must be complete)
+              if (address && postalCode && city && country) {
+                (updateData as any).billing_address = {
+                  address: address.trim(),
+                  postal_code: postalCode.trim(),
+                  city: city.trim(),
+                  country_alpha2: country.trim().toUpperCase()
+                };
+              }
+              
+              if (customerType === 'company') {
+                const name = this.getNodeParameter('customerName', i) as string;
+                if (name && name.trim() !== '') {
+                  (updateData as any).name = name.trim();
+                }
+                
+                const siret = this.getNodeParameter('customerSiret', i) as string;
+                const vatNumber = this.getNodeParameter('customerVatNumber', i) as string;
+                
+                if (siret && siret.trim() !== '') {
+                  (updateData as any).reg_no = siret.trim();
+                }
+                if (vatNumber && vatNumber.trim() !== '') {
+                  (updateData as any).vat_number = vatNumber.trim();
+                }
+                
+                // Use company-specific endpoint
+                responseData = await pennylaneApiRequest.call(this, 'PUT', `/company_customers/${updateId}`, updateData);
+                break;
+              } else {
+                const firstName = this.getNodeParameter('customerFirstName', i) as string;
+                const lastName = this.getNodeParameter('customerLastName', i) as string;
+                
+                if (firstName && firstName.trim() !== '') {
+                  (updateData as any).first_name = firstName.trim();
+                }
+                if (lastName && lastName.trim() !== '') {
+                  (updateData as any).last_name = lastName.trim();
+                }
+                
+                // Use individual-specific endpoint
+                responseData = await pennylaneApiRequest.call(this, 'PUT', `/individual_customers/${updateId}`, updateData);
+                break;
+              }
             } else if (resource === 'supplier') {
               const name = this.getNodeParameter('supplierName', i) as string;
               updateData = { name };
@@ -3000,12 +3569,119 @@ export class Pennylane implements INodeType {
             } else if (resource === 'customerInvoice') {
               // Pour les factures, on peut mettre à jour certains champs
               updateData = { label: "Updated invoice" };
+            } else if (resource === 'product') {
+              // Product UPDATE: all fields are optional
+              updateData = {};
+              
+              const label = this.getNodeParameter('productLabel', i) as string;
+              if (label && label.trim() !== '') {
+                (updateData as any).label = label.trim();
+              }
+              
+              let unit = this.getNodeParameter('productUnit', i) as string;
+              if (unit && unit.trim() !== '') {
+                // Handle custom unit
+                if (unit === 'custom') {
+                  const customUnit = this.getNodeParameter('productUnitCustom', i) as string;
+                  if (customUnit && customUnit.trim() !== '') {
+                    (updateData as any).unit = customUnit.trim();
+                  }
+                } else {
+                  (updateData as any).unit = unit.trim();
+                }
+              }
+              
+              const currency = this.getNodeParameter('productCurrency', i) as string;
+              if (currency && currency.trim() !== '') {
+                (updateData as any).currency = currency.trim();
+              }
+              
+              const vatRate = this.getNodeParameter('vatRate', i) as string;
+              if (vatRate && vatRate.trim() !== '') {
+                (updateData as any).vat_rate = vatRate.trim();
+              }
+              
+              // Handle price (euros or cents)
+              const priceInputMethod = this.getNodeParameter('priceInputMethod', i) as string;
+              if (priceInputMethod === 'euros') {
+                const priceInCurrency = this.getNodeParameter('productPriceEuros', i) as number;
+                if (priceInCurrency !== undefined && priceInCurrency !== null) {
+                  // Convert currency to cents (x100)
+                  (updateData as any).price_before_tax = Math.round(priceInCurrency * 100).toString();
+                }
+              } else {
+                const priceInCents = this.getNodeParameter('productPrice', i) as number;
+                if (priceInCents !== undefined && priceInCents !== null) {
+                  (updateData as any).price_before_tax = priceInCents.toString();
+                }
+              }
             // NOTE: sepaMandate removed from UPDATE due to HTML response issue
+            } else if (resource === 'supplierInvoice') {
+              // Supplier invoice UPDATE: use JSON input
+              const updateDataRaw = this.getNodeParameter('updateInvoiceData', i) as string;
+              updateData = typeof updateDataRaw === 'string' ? JSON.parse(updateDataRaw) : updateDataRaw;
             } else {
-              throw new Error(`Update operation not supported for ${resource}. Supported resources: customers, suppliers, categories, customerInvoices.`);
+              throw new Error(`Update operation not supported for ${resource}. Supported resources: customers, suppliers, categories, customerInvoices, products, supplierInvoices.`);
             }
             
             responseData = await pennylaneApiRequest.call(this, 'PUT', `/${endpoint}/${updateId}`, updateData);
+            break;
+          
+          // === SUPPLIER INVOICE WRITE OPERATIONS ===
+          
+          case 'importInvoice':
+            if (resource === 'supplierInvoice') {
+              const importDataRaw = this.getNodeParameter('importInvoiceData', i) as string;
+              const importData = typeof importDataRaw === 'string' ? JSON.parse(importDataRaw) : importDataRaw;
+              responseData = await pennylaneApiRequest.call(this, 'POST', '/supplier_invoices/import', importData);
+            }
+            break;
+            
+          case 'categorizeInvoice':
+            if (resource === 'supplierInvoice') {
+              const invoiceId = this.getNodeParameter('subResourceSupplierInvoiceId', i) as string;
+              const categoriesDataRaw = this.getNodeParameter('categoriesData', i) as string;
+              const categoriesData = typeof categoriesDataRaw === 'string' ? JSON.parse(categoriesDataRaw) : categoriesDataRaw;
+              responseData = await pennylaneApiRequest.call(this, 'PUT', `/supplier_invoices/${invoiceId}/categories`, { categories: categoriesData });
+            }
+            break;
+            
+          case 'updatePaymentStatus':
+            if (resource === 'supplierInvoice') {
+              const invoiceId = this.getNodeParameter('subResourceSupplierInvoiceId', i) as string;
+              const paymentStatus = this.getNodeParameter('paymentStatus', i) as string;
+              responseData = await pennylaneApiRequest.call(this, 'PUT', `/supplier_invoices/${invoiceId}/payment_status`, { payment_status: paymentStatus });
+            }
+            break;
+            
+          case 'validateAccounting':
+            if (resource === 'supplierInvoice') {
+              const invoiceId = this.getNodeParameter('subResourceSupplierInvoiceId', i) as string;
+              responseData = await pennylaneApiRequest.call(this, 'PUT', `/supplier_invoices/${invoiceId}/validate_accounting`, {});
+            }
+            break;
+            
+          case 'linkPurchaseRequest':
+            if (resource === 'supplierInvoice') {
+              const invoiceId = this.getNodeParameter('subResourceSupplierInvoiceId', i) as string;
+              const purchaseRequestId = this.getNodeParameter('purchaseRequestId', i) as string;
+              responseData = await pennylaneApiRequest.call(this, 'POST', `/supplier_invoices/${invoiceId}/linked_purchase_requests`, { purchase_request_id: purchaseRequestId });
+            }
+            break;
+            
+          case 'updateEInvoiceStatus':
+            if (resource === 'supplierInvoice') {
+              const invoiceId = this.getNodeParameter('subResourceSupplierInvoiceId', i) as string;
+              const eInvoiceStatus = this.getNodeParameter('eInvoiceStatus', i) as string;
+              const reason = this.getNodeParameter('eInvoiceReason', i, undefined) as string | undefined;
+              
+              const requestBody: any = { status: eInvoiceStatus };
+              if (reason && (eInvoiceStatus === 'disputed' || eInvoiceStatus === 'refused')) {
+                requestBody.reason = reason;
+              }
+              
+              responseData = await pennylaneApiRequest.call(this, 'PUT', `/supplier_invoices/${invoiceId}/e_invoice_status`, requestBody);
+            }
             break;
 
           case 'delete':
