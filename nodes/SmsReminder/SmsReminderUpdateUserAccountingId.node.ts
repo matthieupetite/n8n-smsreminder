@@ -73,7 +73,7 @@ export class SmsReminderUpdateUserAccountingId implements INodeType {
 		for (let i = 0; i < items.length; i++) {
 			const userId = this.getNodeParameter('userId', i) as string;
 			const accountingSystemCustomerId = this.getNodeParameter('accountingSystemCustomerId', i) as string;
-			const url = `${credentials.domain}/api/users/${userId}/accounting`;
+			const url = `${credentials.domain}/api/user/${userId}/accounting`;
 
 			Logger.info(`[UpdateUserAccountingId] PATCH ${url} for user ${userId}`);
 

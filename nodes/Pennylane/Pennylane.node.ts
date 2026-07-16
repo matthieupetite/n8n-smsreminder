@@ -8,6 +8,7 @@ import {
 } from 'n8n-workflow';
 
 import { pennylaneApiRequest } from './GenericFunctions';
+import { appendTransactionReferenceToCreatePayload } from './invoicePayloadUtils';
 
 export class Pennylane implements INodeType {
   description: INodeTypeDescription = {
@@ -1542,6 +1543,63 @@ export class Pennylane implements INodeType {
         default: '',
         description: 'Your unique external reference to track this invoice. If not provided, Pennylane generates one.',
         placeholder: 'e.g., EXT-2024-001',
+      },
+      {
+        displayName: 'Transaction Reference',
+        name: 'invoiceTransactionReference',
+        type: 'fixedCollection',
+        displayOptions: {
+          show: {
+            resource: ['customerInvoice'],
+            operation: ['create']
+          },
+        },
+        default: {},
+        placeholder: 'Add transaction reference',
+        description: 'Optional payment matching reference to reconcile the invoice with a bank transaction',
+        options: [
+          {
+            name: 'values',
+            displayName: 'Reference',
+            values: [
+              {
+                displayName: 'Banking Provider',
+                name: 'banking_provider',
+                type: 'options',
+                options: [
+                  { name: 'Stripe', value: 'stripe' },
+                  { name: 'GoCardless', value: 'gocardless' },
+                  { name: 'Bank', value: 'bank' },
+                  { name: 'Budget Insight', value: 'budgetinsight' },
+                ],
+                default: '',
+                description: 'Allowed Pennylane banking provider values',
+              },
+              {
+                displayName: 'Provider Field Name',
+                name: 'provider_field_name',
+                type: 'options',
+                options: [
+                  { name: 'Payment ID', value: 'payment_id' },
+                  { name: 'Paymend ID', value: 'paymend_id' },
+                  { name: 'Charge ID', value: 'charge_id' },
+                  { name: 'Report ID', value: 'report_id' },
+                  { name: 'Web ID', value: 'web_id' },
+                  { name: 'Label', value: 'label' },
+                ],
+                default: '',
+                description: 'Allowed Pennylane provider field name values',
+              },
+              {
+                displayName: 'Provider Field Value',
+                name: 'provider_field_value',
+                type: 'string',
+                default: '',
+                placeholder: 'e.g., INV-2024-001',
+              },
+            ],
+          },
+        ],
       },
       
       // === MÉTHODE SIMPLE ===
@@ -3684,6 +3742,8 @@ export class Pennylane implements INodeType {
               const special_mention = this.getNodeParameter('invoiceSpecialMention', i) as string;
               const label = this.getNodeParameter('invoiceLabel', i) as string;
               const external_reference = this.getNodeParameter('invoiceExternalReference', i) as string;
+              const transactionReferenceInput = this.getNodeParameter('invoiceTransactionReference', i, {}) as any;
+              const transactionReferenceValues = transactionReferenceInput.values || transactionReferenceInput;
               
               // Gestion du discount structuré
               const discountType = this.getNodeParameter('invoiceDiscountType', i) as string;
@@ -3726,10 +3786,6 @@ export class Pennylane implements INodeType {
                   invoice_lines: [{
                     product_id,
                     quantity: quantity.toString(),
-                    label: "Invoice line",
-                    raw_currency_unit_price: "1000",
-                    unit: "unit",
-                    vat_rate: "FR_200"
                   }]
                 };
                 
@@ -3758,6 +3814,7 @@ export class Pennylane implements INodeType {
                 if (discount) {
                   (createData as any).discount = discount;
                 }
+                appendTransactionReferenceToCreatePayload(createData as Record<string, any>, transactionReferenceValues);
               } else if (creationMethod === 'advanced') {
                 // Méthode avancée : lignes multiples via JSON
                 const invoiceLinesRaw = this.getNodeParameter('invoiceLines', i) as string;
@@ -3808,6 +3865,7 @@ export class Pennylane implements INodeType {
                 if (invoice_line_sections) {
                   (createData as any).invoice_line_sections = invoice_line_sections;
                 }
+                appendTransactionReferenceToCreatePayload(createData as Record<string, any>, transactionReferenceValues);
               } else if (creationMethod === 'dynamic') {
                 // Méthode dynamique : fixedCollection avec boutons Add/Remove
                 const invoiceLinesDynamic = this.getNodeParameter('invoiceLinesDynamic', i) as any;
@@ -3898,6 +3956,7 @@ export class Pennylane implements INodeType {
                 if (invoice_line_sections) {
                   (createData as any).invoice_line_sections = invoice_line_sections;
                 }
+                appendTransactionReferenceToCreatePayload(createData as Record<string, any>, transactionReferenceValues);
               } else if (creationMethod === 'json') {
                 // Méthode JSON complète : utiliser directement le JSON fourni
                 const completeJsonRaw = this.getNodeParameter('invoiceCompleteJson', i) as string;
@@ -3915,6 +3974,7 @@ export class Pennylane implements INodeType {
                   draft,
                   customer_id
                 };
+                appendTransactionReferenceToCreatePayload(createData as Record<string, any>, transactionReferenceValues);
               }
             } else if (resource === 'sepaMandate') {
               const customer_id = this.getNodeParameter('mandateCustomerId', i) as number;
