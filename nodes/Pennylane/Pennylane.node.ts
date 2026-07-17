@@ -8,7 +8,39 @@ import {
 } from 'n8n-workflow';
 
 import { pennylaneApiRequest } from './GenericFunctions';
-import { appendTransactionReferenceToCreatePayload } from './invoicePayloadUtils';
+import { appendTransactionReferenceToCreatePayload, resolveInvoiceIssueDate } from './invoicePayloadUtils';
+
+async function getLatestFinalizedInvoiceDate(context: IExecuteFunctions, customerId: number): Promise<string | null> {
+  try {
+    const response = await pennylaneApiRequest.call(context as any, 'GET', '/customer_invoices?per_page=100');
+    const invoices = Array.isArray(response?.items) ? response.items : [];
+
+    const finalizedInvoices = invoices.filter((invoice: any) => {
+      const invoiceCustomerId = invoice?.customer_id;
+      const invoiceDate = typeof invoice?.date === 'string' ? invoice.date.split('T')[0] : '';
+      return invoiceCustomerId === customerId && invoice?.draft === false && invoiceDate;
+    });
+
+    if (finalizedInvoices.length === 0) {
+      return null;
+    }
+
+    return finalizedInvoices.reduce((latest: string | null, invoice: any) => {
+      const invoiceDate = typeof invoice?.date === 'string' ? invoice.date.split('T')[0] : '';
+      if (!invoiceDate) {
+        return latest;
+      }
+
+      if (!latest || invoiceDate > latest) {
+        return invoiceDate;
+      }
+
+      return latest;
+    }, null);
+  } catch (error) {
+    return null;
+  }
+}
 
 export class Pennylane implements INodeType {
   description: INodeTypeDescription = {
@@ -3726,11 +3758,15 @@ export class Pennylane implements INodeType {
             } else if (resource === 'customerInvoice') {
               const creationMethod = this.getNodeParameter('invoiceCreationMethod', i) as string;
               const invoiceDate = this.getNodeParameter('invoiceDate', i) as string;
-              const date = invoiceDate.split('T')[0]; // Convertir la date au format YYYY-MM-DD
               const invoiceDeadlineRaw = this.getNodeParameter('invoiceDeadline', i) as string;
-              const deadline = invoiceDeadlineRaw.split('T')[0]; // Convertir la date au format YYYY-MM-DD
               const draft = this.getNodeParameter('invoiceDraft', i) as boolean;
+              const date = invoiceDate.split('T')[0]; // Convertir la date au format YYYY-MM-DD
+              const deadline = invoiceDeadlineRaw.split('T')[0]; // Convertir la date au format YYYY-MM-DD
               const customer_id = this.getNodeParameter('invoiceCustomerId', i) as number;
+              const latestFinalizedInvoiceDate = draft === false
+                ? await getLatestFinalizedInvoiceDate(this, customer_id)
+                : null;
+              const invoiceIssueDate = resolveInvoiceIssueDate(date, draft, latestFinalizedInvoiceDate);
               
               // Champs optionnels communs
               const invoiceTemplateId = this.getNodeParameter('invoiceTemplateId', i) as number;
@@ -3777,7 +3813,7 @@ export class Pennylane implements INodeType {
                 const quantity = this.getNodeParameter('invoiceQuantity', i) as number;
                 
                 createData = {
-                  date,
+                  date: invoiceIssueDate,
                   deadline,
                   draft,
                   customer_id,
@@ -3824,7 +3860,7 @@ export class Pennylane implements INodeType {
                   : invoiceLinesRaw;
                 
                 createData = {
-                  date,
+                  date: invoiceIssueDate,
                   deadline,
                   draft,
                   customer_id,
@@ -3915,7 +3951,7 @@ export class Pennylane implements INodeType {
                 });
                 
                 createData = {
-                  date,
+                  date: invoiceIssueDate,
                   deadline,
                   draft,
                   customer_id,
@@ -3969,7 +4005,7 @@ export class Pennylane implements INodeType {
                   currency,
                   language,
                   ...completeData,
-                  date,
+                  date: invoiceIssueDate,
                   deadline,
                   draft,
                   customer_id

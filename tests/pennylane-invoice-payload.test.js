@@ -2,6 +2,7 @@ const assert = require('assert');
 const {
   buildTransactionReferencePayload,
   appendTransactionReferenceToCreatePayload,
+  resolveInvoiceIssueDate,
 } = require('../dist/nodes/Pennylane/invoicePayloadUtils.js');
 
 const payload = buildTransactionReferencePayload({
@@ -35,5 +36,9 @@ assert.deepStrictEqual(createPayload.transaction_reference, {
   provider_field_name: 'charge_id',
   provider_field_value: 'INV-001',
 });
+
+assert.strictEqual(resolveInvoiceIssueDate('2024-01-01', false, '2024-01-15'), '2024-01-15');
+assert.strictEqual(resolveInvoiceIssueDate('2024-01-01', true, '2024-01-15'), '2024-01-01');
+assert.strictEqual(resolveInvoiceIssueDate('2024-01-01', false), '2024-01-01');
 
 console.log('Pennylane invoice payload regression test passed');

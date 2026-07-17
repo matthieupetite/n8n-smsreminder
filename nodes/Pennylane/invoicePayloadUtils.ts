@@ -44,3 +44,25 @@ export function appendTransactionReferenceToCreatePayload(
     createData.transaction_reference = transactionReference;
   }
 }
+
+export function resolveInvoiceIssueDate(
+  invoiceDate: string | undefined | null,
+  draft: boolean | undefined | null,
+  latestFinalizedInvoiceDate?: string | undefined | null,
+): string {
+  const candidate = typeof invoiceDate === 'string' ? invoiceDate.trim() : '';
+  if (!candidate) {
+    return '';
+  }
+
+  if (draft === false) {
+    const latestDate = typeof latestFinalizedInvoiceDate === 'string' ? latestFinalizedInvoiceDate.trim() : '';
+    if (!latestDate) {
+      return candidate;
+    }
+
+    return latestDate >= candidate ? latestDate : candidate;
+  }
+
+  return candidate;
+}
