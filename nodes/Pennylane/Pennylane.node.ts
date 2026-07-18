@@ -1157,7 +1157,7 @@ export class Pennylane implements INodeType {
         },
         default: '',
         description: 'Enter custom unit name',
-        required: true,
+        required: false, // Optional for UPDATE, but should be provided for CREATE when unit is 'custom'
       },
       {
         displayName: 'Price Input Method',
