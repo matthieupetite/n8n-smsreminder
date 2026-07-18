@@ -88,5 +88,30 @@ export function buildPennylaneCategoriesPayload(categoriesData: unknown, _isCust
         ? (categoriesData as any).categories
         : categoriesData);
 
+  // Ensure all IDs are integers, not strings
+  if (Array.isArray(normalizedCategories)) {
+    return normalizedCategories.map(item => {
+      if (typeof item === 'number') {
+        return item;
+      }
+      if (typeof item === 'string') {
+        const parsed = parseInt(item, 10);
+        if (isNaN(parsed)) {
+          throw new Error(`Invalid category ID: "${item}" is not a valid integer`);
+        }
+        return parsed;
+      }
+      if (item && typeof item === 'object' && 'id' in item) {
+        const id = (item as any).id;
+        const parsedId = typeof id === 'string' ? parseInt(id, 10) : id;
+        if (typeof parsedId !== 'number' || isNaN(parsedId)) {
+          throw new Error(`Invalid category ID in object: "${id}" is not a valid integer`);
+        }
+        return { ...item, id: parsedId };
+      }
+      throw new Error(`Invalid category format: expected number, string, or object with id, got ${typeof item}`);
+    });
+  }
+
   return normalizedCategories;
 }
