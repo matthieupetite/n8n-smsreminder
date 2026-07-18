@@ -75,3 +75,13 @@ export function buildCustomerInvoiceMarkAsPaidEndpoint(invoiceId: string | numbe
 
   return `/customer_invoices/${normalizedInvoiceId}/mark_as_paid`;
 }
+
+export function buildPennylaneCategoriesPayload(categoriesData: unknown, isCustomerInvoice: boolean): unknown {
+  const normalizedCategories = Array.isArray(categoriesData)
+    ? categoriesData
+    : (categoriesData && typeof categoriesData === 'object' && Array.isArray((categoriesData as any).categories)
+        ? (categoriesData as any).categories
+        : categoriesData);
+
+  return isCustomerInvoice ? normalizedCategories : { categories: normalizedCategories };
+}
