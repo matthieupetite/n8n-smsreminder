@@ -66,3 +66,12 @@ export function resolveInvoiceIssueDate(
 
   return candidate;
 }
+
+export function buildCustomerInvoiceMarkAsPaidEndpoint(invoiceId: string | number): string {
+  const normalizedInvoiceId = typeof invoiceId === 'number' ? invoiceId.toString() : (invoiceId ?? '').trim();
+  if (!normalizedInvoiceId) {
+    throw new Error('Invoice ID is required to mark a customer invoice as paid');
+  }
+
+  return `/customer_invoices/${normalizedInvoiceId}/mark_as_paid`;
+}

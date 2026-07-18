@@ -8,7 +8,7 @@ import {
 } from 'n8n-workflow';
 
 import { pennylaneApiRequest } from './GenericFunctions';
-import { appendTransactionReferenceToCreatePayload, resolveInvoiceIssueDate } from './invoicePayloadUtils';
+import { appendTransactionReferenceToCreatePayload, buildCustomerInvoiceMarkAsPaidEndpoint, resolveInvoiceIssueDate } from './invoicePayloadUtils';
 
 async function getLatestFinalizedInvoiceDate(context: IExecuteFunctions, customerId: number): Promise<string | null> {
   try {
@@ -158,6 +158,7 @@ export class Pennylane implements INodeType {
           { name: 'Upload Appendix', value: 'uploadAppendix' },
           { name: 'Get Categories', value: 'getCategories' },
           { name: 'Categorize Invoice', value: 'categorizeInvoice' },
+          { name: 'Mark as Paid', value: 'markAsPaid' },
           { name: 'Send by Email', value: 'sendByEmail' },
           { name: 'Get Custom Header Fields', value: 'getCustomHeaderFields' },
         ],
@@ -2181,6 +2182,23 @@ export class Pennylane implements INodeType {
         required: true,
       },
       {
+        displayName: 'Customer Invoice',
+        name: 'customerInvoiceId',
+        type: 'options',
+        typeOptions: {
+          loadOptionsMethod: 'getCustomerInvoices',
+        },
+        displayOptions: {
+          show: {
+            resource: ['customerInvoice'],
+            operation: ['markAsPaid']
+          },
+        },
+        default: '',
+        description: 'Select the customer invoice to mark as paid',
+        required: true,
+      },
+      {
         displayName: 'Supplier Invoice',
         name: 'supplierInvoiceId',
         type: 'options',
@@ -4194,6 +4212,14 @@ export class Pennylane implements INodeType {
               const categoriesDataRaw = this.getNodeParameter('categoriesData', i) as string;
               const categoriesData = typeof categoriesDataRaw === 'string' ? JSON.parse(categoriesDataRaw) : categoriesDataRaw;
               responseData = await pennylaneApiRequest.call(this, 'PUT', `/supplier_invoices/${invoiceId}/categories`, { categories: categoriesData });
+            }
+            break;
+
+          case 'markAsPaid':
+            if (resource === 'customerInvoice') {
+              const invoiceId = this.getNodeParameter('customerInvoiceId', i) as string;
+              const endpoint = buildCustomerInvoiceMarkAsPaidEndpoint(invoiceId);
+              responseData = await pennylaneApiRequest.call(this, 'PUT', endpoint, {});
             }
             break;
             
