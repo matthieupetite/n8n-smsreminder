@@ -77,10 +77,12 @@ export function buildCustomerInvoiceMarkAsPaidEndpoint(invoiceId: string | numbe
 }
 
 export function buildPennylaneCategoriesPayload(categoriesData: unknown, _isCustomerInvoice: boolean): unknown {
-  // Both Customer Invoice and Supplier Invoice APIs expect the same format: a direct array
+  // Both Customer Invoice and Supplier Invoice APIs expect the same format: a direct array of objects
   // API docs: https://pennylane.readme.io/reference/putcustomerinvoicecategories
   //           https://pennylane.readme.io/reference/putsupplierinvoicecategories
-  // Expected format: [{"id": 1, "weight": "0.5"}] or simplified: [1, 2]
+  // Expected format: [{"id": 12, "weight": "0.4"}, {"id": 426, "weight": "0.6"}]
+  // - id: integer (required)
+  // - weight: string representing decimal 0-1 (optional, defaults to "1" if omitted)
   
   const normalizedCategories = Array.isArray(categoriesData)
     ? categoriesData
@@ -88,27 +90,43 @@ export function buildPennylaneCategoriesPayload(categoriesData: unknown, _isCust
         ? (categoriesData as any).categories
         : categoriesData);
 
-  // Ensure all IDs are integers, not strings
+  // Ensure all items are objects with integer IDs and string weights
   if (Array.isArray(normalizedCategories)) {
     return normalizedCategories.map(item => {
-      if (typeof item === 'number') {
-        return item;
-      }
-      if (typeof item === 'string') {
-        const parsed = parseInt(item, 10);
-        if (isNaN(parsed)) {
-          throw new Error(`Invalid category ID: "${item}" is not a valid integer`);
-        }
-        return parsed;
-      }
+      // If already an object with id, normalize id to integer and weight to string
       if (item && typeof item === 'object' && 'id' in item) {
         const id = (item as any).id;
         const parsedId = typeof id === 'string' ? parseInt(id, 10) : id;
         if (typeof parsedId !== 'number' || isNaN(parsedId)) {
           throw new Error(`Invalid category ID in object: "${id}" is not a valid integer`);
         }
-        return { ...item, id: parsedId };
+        
+        const result: any = { id: parsedId };
+        
+        // Normalize weight to string if present
+        if ('weight' in item) {
+          const weight = (item as any).weight;
+          if (weight !== null && weight !== undefined) {
+            result.weight = typeof weight === 'string' ? weight : String(weight);
+          }
+        }
+        
+        return result;
       }
+      
+      // If it's a number or string, wrap it in an object with just the id
+      if (typeof item === 'number') {
+        return { id: item };
+      }
+      
+      if (typeof item === 'string') {
+        const parsed = parseInt(item, 10);
+        if (isNaN(parsed)) {
+          throw new Error(`Invalid category ID: "${item}" is not a valid integer`);
+        }
+        return { id: parsed };
+      }
+      
       throw new Error(`Invalid category format: expected number, string, or object with id, got ${typeof item}`);
     });
   }

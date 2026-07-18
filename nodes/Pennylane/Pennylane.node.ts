@@ -2281,9 +2281,9 @@ export class Pennylane implements INodeType {
             operation: ['categorizeInvoice']
           },
         },
-        default: '[1]',
-        description: 'Array of category IDs (simple: [1, 2]) or with weights ([{"id": 1, "weight": 1.0}]). For Customer Invoice: sends array directly. For Supplier Invoice: wraps in {"categories": [...]}',
-        placeholder: '[1]',
+        default: '[{"id": 1, "weight": "1"}]',
+        description: 'Array of category objects. Format: [{"id": 12, "weight": "0.4"}, {"id": 426, "weight": "0.6"}]. ID must be integer, weight must be string (decimal 0-1). Sum of weights in same category group must equal 1.',
+        placeholder: '[{"id": 1, "weight": "1"}]',
         required: true,
       },
       
