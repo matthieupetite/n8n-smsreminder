@@ -76,12 +76,17 @@ export function buildCustomerInvoiceMarkAsPaidEndpoint(invoiceId: string | numbe
   return `/customer_invoices/${normalizedInvoiceId}/mark_as_paid`;
 }
 
-export function buildPennylaneCategoriesPayload(categoriesData: unknown, isCustomerInvoice: boolean): unknown {
+export function buildPennylaneCategoriesPayload(categoriesData: unknown, _isCustomerInvoice: boolean): unknown {
+  // Both Customer Invoice and Supplier Invoice APIs expect the same format: a direct array
+  // API docs: https://pennylane.readme.io/reference/putcustomerinvoicecategories
+  //           https://pennylane.readme.io/reference/putsupplierinvoicecategories
+  // Expected format: [{"id": 1, "weight": "0.5"}] or simplified: [1, 2]
+  
   const normalizedCategories = Array.isArray(categoriesData)
     ? categoriesData
     : (categoriesData && typeof categoriesData === 'object' && Array.isArray((categoriesData as any).categories)
         ? (categoriesData as any).categories
         : categoriesData);
 
-  return isCustomerInvoice ? normalizedCategories : { categories: normalizedCategories };
+  return normalizedCategories;
 }

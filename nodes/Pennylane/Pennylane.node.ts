@@ -2281,8 +2281,9 @@ export class Pennylane implements INodeType {
             operation: ['categorizeInvoice']
           },
         },
-        default: '[{"id": 1234, "weight": 1.0}]',
-        description: 'Array of category objects with id and weight (e.g., [{"id": 1234, "weight": 1.0}])',
+        default: '[1]',
+        description: 'Array of category IDs (simple: [1, 2]) or with weights ([{"id": 1, "weight": 1.0}]). For Customer Invoice: sends array directly. For Supplier Invoice: wraps in {"categories": [...]}',
+        placeholder: '[1]',
         required: true,
       },
       
@@ -2549,23 +2550,6 @@ export class Pennylane implements INodeType {
         default: '',
         description: 'File to upload (use Binary Data input). Supported: PDF, PNG, JPEG, TIFF, BMP, GIF',
         placeholder: 'data:@binary',
-        required: true,
-      },
-      
-      // Champs pour Categorize Invoice
-      {
-        displayName: 'Categories (JSON)',
-        name: 'invoiceCategories',
-        type: 'json',
-        displayOptions: {
-          show: { 
-            resource: ['customerInvoice'],
-            operation: ['categorizeInvoice']
-          },
-        },
-        default: '[]',
-        description: 'Array of category assignments. Example: [{"category_id": 1, "weight": "0.5"}]',
-        placeholder: '[{"category_id": 123, "weight": "1.0"}]',
         required: true,
       },
       

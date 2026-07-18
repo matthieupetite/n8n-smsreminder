@@ -123,6 +123,13 @@ export async function pennylaneApiRequest(
           }
         }
         
+        // Gestion spéciale du 204 No Content (mark as paid, etc.)
+        if (res.statusCode === 204) {
+          console.log('✅ HTTP 204 No Content - Success');
+          resolve({ success: true, statusCode: 204 });
+          return;
+        }
+        
         try {
           const parsed = JSON.parse(data);
           if (res.statusCode! >= 200 && res.statusCode! < 300) {
