@@ -2528,7 +2528,7 @@ export class Pennylane implements INodeType {
         displayOptions: {
           show: { 
             resource: ['customerInvoice'],
-            operation: ['getInvoiceLines', 'getInvoiceLineSections', 'getPayments', 'getMatchedTransactions', 'getAppendices', 'uploadAppendix', 'getCategories', 'categorizeInvoice', 'sendByEmail', 'getCustomHeaderFields']
+            operation: ['getInvoiceLines', 'getInvoiceLineSections', 'getPayments', 'getMatchedTransactions', 'getAppendices', 'uploadAppendix', 'getCategories', 'sendByEmail', 'getCustomHeaderFields']
           },
         },
         default: '',
@@ -3552,14 +3552,6 @@ export class Pennylane implements INodeType {
             // Expected implementation:
             // const formData = { file: fileData };
             // responseData = await pennylaneApiRequest.call(this, 'POST', `/customer_invoices/${uploadInvoiceId}/appendices`, formData, { 'Content-Type': 'multipart/form-data' });
-            break;
-            
-          case 'categorizeInvoice':
-            const categorizeId = this.getNodeParameter('subResourceInvoiceId', i) as string;
-            const categoriesDataRaw = this.getNodeParameter('invoiceCategories', i) as string;
-            const categoriesData = typeof categoriesDataRaw === 'string' ? JSON.parse(categoriesDataRaw) : categoriesDataRaw;
-            
-            responseData = await pennylaneApiRequest.call(this, 'PUT', `/customer_invoices/${categorizeId}/categories`, { categories: categoriesData });
             break;
             
           case 'sendByEmail':
