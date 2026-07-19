@@ -1008,6 +1008,21 @@ export class Pennylane implements INodeType {
         placeholder: 'Dupont',
       },
       
+      {
+        displayName: 'External Reference (Optional)',
+        name: 'customerExternalReference',
+        type: 'string',
+        displayOptions: {
+          show: {
+            resource: ['customer'],
+            operation: ['create', 'update'],
+          },
+        },
+        default: '',
+        description: 'Your unique external reference to identify this customer in your system (optional)',
+        placeholder: 'e.g., CRM-12345',
+      },
+
       // Champs spécialisés pour Category
       {
         displayName: 'Category Label',
@@ -3652,6 +3667,11 @@ export class Pennylane implements INodeType {
                 if (vatNumber && vatNumber.trim() !== '') {
                   (createData as any).vat_number = vatNumber.trim();
                 }
+
+                const externalReferenceCompany = this.getNodeParameter('customerExternalReference', i) as string;
+                if (externalReferenceCompany && externalReferenceCompany.trim() !== '') {
+                  (createData as any).external_reference = externalReferenceCompany.trim();
+                }
                 
                 // Use company-specific endpoint
                 responseData = await pennylaneApiRequest.call(this, 'POST', '/company_customers', createData);
@@ -3677,6 +3697,11 @@ export class Pennylane implements INodeType {
                 }
                 if (phone && phone.trim() !== '') {
                   (createData as any).phone = phone.trim();
+                }
+
+                const externalReferenceIndividual = this.getNodeParameter('customerExternalReference', i) as string;
+                if (externalReferenceIndividual && externalReferenceIndividual.trim() !== '') {
+                  (createData as any).external_reference = externalReferenceIndividual.trim();
                 }
                 
                 // Use individual-specific endpoint
@@ -4086,6 +4111,11 @@ export class Pennylane implements INodeType {
                 if (vatNumber && vatNumber.trim() !== '') {
                   (updateData as any).vat_number = vatNumber.trim();
                 }
+
+                const externalRefCompanyUpdate = this.getNodeParameter('customerExternalReference', i) as string;
+                if (externalRefCompanyUpdate && externalRefCompanyUpdate.trim() !== '') {
+                  (updateData as any).external_reference = externalRefCompanyUpdate.trim();
+                }
                 
                 // Use company-specific endpoint
                 responseData = await pennylaneApiRequest.call(this, 'PUT', `/company_customers/${updateId}`, updateData);
@@ -4099,6 +4129,11 @@ export class Pennylane implements INodeType {
                 }
                 if (lastName && lastName.trim() !== '') {
                   (updateData as any).last_name = lastName.trim();
+                }
+
+                const externalRefIndividualUpdate = this.getNodeParameter('customerExternalReference', i) as string;
+                if (externalRefIndividualUpdate && externalRefIndividualUpdate.trim() !== '') {
+                  (updateData as any).external_reference = externalRefIndividualUpdate.trim();
                 }
                 
                 // Use individual-specific endpoint
